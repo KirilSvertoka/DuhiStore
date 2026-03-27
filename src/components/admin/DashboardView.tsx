@@ -9,14 +9,15 @@ interface DashboardViewProps {
 }
 
 export default function DashboardView({ data, loading }: DashboardViewProps) {
-  if (loading || !data) return <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-stone-200 border-t-stone-900 rounded-full animate-spin"></div></div>;
+  if (loading) return <div className="flex justify-center py-12"><div className="w-8 h-8 border-4 border-brand-border border-t-brand-light rounded-full animate-spin"></div></div>;
+  if (!data) return <div className="flex justify-center py-12 text-brand-muted">Нет данных для отображения.</div>;
 
-  const metrics = [
-    { label: 'Sales Today', value: `${data.metrics.salesToday} BYN`, icon: ShoppingBag, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { label: 'Active Carts', value: data.metrics.activeCarts, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Conversion', value: `${data.metrics.conversion}%`, icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Monthly Sales', value: `${data.metrics.salesMonth} BYN`, icon: BarChart3, color: 'text-purple-600', bg: 'bg-purple-50' },
-  ];
+    const metrics = [
+      { label: 'Продажи сегодня', value: `${data.metrics.salesToday} BYN`, icon: ShoppingBag, color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+      { label: 'Активные корзины', value: data.metrics.activeCarts, icon: ShoppingBag, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+      { label: 'Конверсия', value: `${data.metrics.conversion}%`, icon: TrendingUp, color: 'text-amber-400', bg: 'bg-amber-400/10' },
+      { label: 'Продажи за месяц', value: `${data.metrics.salesMonth} BYN`, icon: BarChart3, color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    ];
 
   return (
     <div className="space-y-8">
@@ -27,62 +28,62 @@ export default function DashboardView({ data, loading }: DashboardViewProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
-            className="bg-white dark:bg-stone-900 p-6 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm"
+            className="bg-white/5 p-6 rounded-3xl border border-brand-border shadow-sm"
           >
-            <div className={`w-10 h-10 ${m.bg} dark:bg-stone-800 rounded-xl flex items-center justify-center mb-4`}>
+            <div className={`w-10 h-10 ${m.bg} rounded-xl flex items-center justify-center mb-4`}>
               <m.icon className={`w-5 h-5 ${m.color}`} />
             </div>
-            <p className="text-sm font-medium text-stone-500 dark:text-stone-400">{m.label}</p>
-            <h3 className="text-2xl font-serif text-stone-900 dark:text-stone-100 mt-1">{m.value}</h3>
+            <p className="text-sm font-medium text-brand-muted">{m.label}</p>
+            <h3 className="text-2xl font-serif text-brand-light mt-1">{m.value}</h3>
           </motion.div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-stone-900 p-8 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm">
-          <h3 className="text-lg font-serif text-stone-900 dark:text-stone-100 mb-6">System Alerts</h3>
+        <div className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm">
+          <h3 className="text-lg font-serif text-brand-light mb-6">Системные уведомления</h3>
           <div className="space-y-4">
             {data.alerts.lowStock.length > 0 ? (
               data.alerts.lowStock.map((item: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
+                <div key={i} className="flex items-center gap-4 p-4 bg-red-400/10 rounded-2xl border border-red-400/20">
+                  <AlertCircle className="w-5 h-5 text-red-400" />
                   <div>
-                    <p className="text-sm font-medium text-red-900 dark:text-red-400">Low Stock: {item.name}</p>
-                    <p className="text-xs text-red-700 dark:text-red-500">{item.size} - Only {item.stock} left (Threshold: {item.stockThreshold})</p>
+                    <p className="text-sm font-medium text-red-400">Мало на складе: {item.name}</p>
+                    <p className="text-xs text-red-500">{item.size} - Осталось {item.stock} (Порог: {item.stockThreshold})</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="flex items-center gap-4 p-4 bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl border border-emerald-100 dark:border-emerald-900/20">
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-                <p className="text-sm font-medium text-emerald-900 dark:text-emerald-400">All inventory levels are healthy.</p>
+              <div className="flex items-center gap-4 p-4 bg-emerald-400/10 rounded-2xl border border-emerald-400/20">
+                <CheckCircle className="w-5 h-5 text-emerald-400" />
+                <p className="text-sm font-medium text-emerald-400">Все запасы в норме.</p>
               </div>
             )}
             {data.alerts.pendingReviews > 0 && (
-              <div className="flex items-center gap-4 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/20">
-                <MessageSquare className="w-5 h-5 text-amber-600" />
-                <p className="text-sm font-medium text-amber-900 dark:text-amber-400">{data.alerts.pendingReviews} reviews awaiting moderation.</p>
+              <div className="flex items-center gap-4 p-4 bg-amber-400/10 rounded-2xl border border-amber-400/20">
+                <MessageSquare className="w-5 h-5 text-amber-400" />
+                <p className="text-sm font-medium text-amber-400">{data.alerts.pendingReviews} отзывов ожидают модерации.</p>
               </div>
             )}
           </div>
         </div>
 
-        <div className="bg-white dark:bg-stone-900 p-8 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm">
-          <h3 className="text-lg font-serif text-stone-900 dark:text-stone-100 mb-6">Sales Trend</h3>
+        <div className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm">
+          <h3 className="text-lg font-serif text-brand-light mb-6">Тенденция продаж</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={[{name: 'Mon', sales: 400}, {name: 'Tue', sales: 300}, {name: 'Wed', sales: 600}, {name: 'Thu', sales: 800}, {name: 'Fri', sales: 500}, {name: 'Sat', sales: 900}, {name: 'Sun', sales: 1100}]}>
+              <AreaChart data={data.salesTrend && data.salesTrend.length > 0 ? data.salesTrend : [{name: 'Нет данных', sales: 0}]}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1c1917" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#1c1917" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#fdfbfb" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#fdfbfb" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e7e5e4" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#78716c'}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#78716c'}} />
-                <Tooltip />
-                <Area type="monotone" dataKey="sales" stroke="#1c1917" fillOpacity={1} fill="url(#colorSales)" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'rgba(255,255,255,0.5)'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'rgba(255,255,255,0.5)'}} />
+                <Tooltip contentStyle={{ backgroundColor: '#660010', borderColor: 'rgba(255,255,255,0.1)', color: '#fdfbfb' }} itemStyle={{ color: '#fdfbfb' }} />
+                <Area type="monotone" dataKey="sales" stroke="#fdfbfb" fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

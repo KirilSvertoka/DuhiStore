@@ -1,8 +1,11 @@
-import { Product } from '../types';
+import React, { useRef, useState } from 'react';
+import { Product, getVariantType } from '../types';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'motion/react';
-import { useRef } from 'react';
 import { useLanguage } from './LanguageProvider';
+import { useCart } from './CartProvider';
+import { useWishlist } from './WishlistProvider';
+import { ShoppingBag, Heart } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -10,7 +13,13 @@ interface ProductCardProps {
 
 export default function ProductCard({ product }: ProductCardProps) {
   const ref = useRef(null);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { addToCart } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const [selectedVariantId, setSelectedVariantId] = useState<number | undefined>(
+    product.variants && product.variants.length > 0 ? product.variants[0].id : undefined
+  );
+
   const { scrollYProgress } = useScroll({
     target: ref,
     offset: ["start end", "end start"]
@@ -18,43 +27,126 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   // Subtle parallax move: -10% to 10% of container height
   const y = useTransform(scrollYProgress, [0, 1], ["-10%", "10%"]);
+  const productUrl = `/catalog/${product.slug || product.id}`;
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product, selectedVariantId);
+  };
+
+  const handleVariantSelect = (e: React.MouseEvent, variantId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedVariantId(variantId);
+  };
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product.id);
+  };
+
+  const isWishlisted = isInWishlist(product.id);
 
   return (
-    <Link to={`/product/${product.id}`} ref={ref} className="block w-full h-full group overflow-hidden bg-stone-100 dark:bg-stone-950">
+    <div ref={ref} className="block w-full h-full group overflow-hidden bg-brand-bg relative">
       <div className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] overflow-hidden">
-        {/* Image with parallax and scale down on hover */}
-        <motion.img 
-          style={{ y }}
-          initial={{ scale: 1.2 }}
-          whileHover={{ scale: 1, opacity: 0.6 }}
-          transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
-          src={product.imageUrl} 
-          alt={product.name} 
-          className="absolute inset-0 object-cover w-full h-full"
-          referrerPolicy="no-referrer"
-        />
-        
-        {/* Dark overlay on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 group-hover:bg-black/60 transition-colors duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" />
+        {/* Wishlist Button - Outside Link to be valid HTML */}
+        <button
+          onClick={handleWishlistToggle}
+          className="absolute top-4 right-4 z-30 p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors cursor-pointer"
+          aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart
+            className={`w-5 h-5 transition-colors ${
+              isWishlisted ? 'fill-red-500 text-red-500' : 'text-white'
+            }`}
+          />
+        </button>
 
-        {/* Content */}
-        <div className="absolute inset-x-0 bottom-0 p-8 md:p-12 flex flex-col justify-end text-white z-10 pointer-events-none">
-          <div className="transform transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-12 group-hover:translate-y-0">
-            <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-stone-300 mb-2 drop-shadow-sm">{product.brand}</p>
-            <div className="flex justify-between items-end mb-4 gap-4">
-              <h3 className="font-serif text-3xl md:text-4xl leading-tight drop-shadow-md">{product.name}</h3>
-              <span className="text-xl md:text-2xl font-light whitespace-nowrap drop-shadow-md">{product.price.toFixed(2)} {t('currency')}</span>
-            </div>
-            
-            {/* Description (hidden by default, appears on hover) */}
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]">
-              <p className="text-stone-200 text-sm md:text-base leading-relaxed line-clamp-3 max-w-md">
-                {product.description}
-              </p>
+        <Link to={productUrl} className="block w-full h-full">
+          {/* Image with parallax and scale down on hover */}
+          <motion.img 
+            style={{ y }}
+            initial={{ scale: 1.2 }}
+            whileHover={{ scale: 1, opacity: 0.6 }}
+            transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
+            src={product.imageUrl} 
+            alt={product.name} 
+            className="absolute inset-0 object-cover w-full h-full"
+            referrerPolicy="no-referrer"
+          />
+          
+          {/* Dark overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 group-hover:bg-black/80 transition-colors duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" />
+
+          {/* Content */}
+          <div className="absolute inset-x-0 bottom-0 p-8 md:p-12 flex flex-col justify-end text-white z-10 pointer-events-none">
+            <div className="transform transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-16 group-hover:translate-y-0">
+              <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-white/80 mb-2 drop-shadow-sm">{product.brand}</p>
+              <div className="flex justify-between items-end mb-4 gap-4">
+                <h3 className="font-serif text-3xl md:text-4xl leading-tight drop-shadow-md">{product.name}</h3>
+                <span className="text-xl md:text-2xl font-light whitespace-nowrap drop-shadow-md">
+                  {product.variants && product.variants.length > 0 
+                    ? `${language === 'be' ? 'ад' : 'от'} ${Math.min(...product.variants.map(v => v.price)).toFixed(2)}` 
+                    : product.price.toFixed(2)} {t('currency')}
+                </span>
+              </div>
+              
+              {/* Description (hidden by default, appears on hover) */}
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]">
+                <p className="text-white/80 text-sm md:text-base leading-relaxed line-clamp-3 max-w-md mb-6">
+                  {language === 'be' && product.description_be ? product.description_be : product.description}
+                </p>
+                
+                {/* Add to Cart Section */}
+                <div className="pointer-events-auto flex flex-col items-start gap-4 w-full">
+                  {product.variants && product.variants.length > 0 && (
+                    <div className="flex flex-col gap-3 w-full">
+                      {Object.entries(
+                        product.variants.reduce((acc, variant) => {
+                          const type = getVariantType(variant.size, language);
+                          if (!acc[type]) acc[type] = [];
+                          acc[type].push(variant);
+                          return acc;
+                        }, {} as Record<string, typeof product.variants>)
+                      ).map(([type, variants]) => (
+                        <div key={type} className="space-y-1.5">
+                          <span className="text-[10px] uppercase tracking-widest text-white/60">{type}</span>
+                          <div className="flex flex-wrap gap-2">
+                            {variants.map((variant) => (
+                              <button
+                                key={variant.id}
+                                onClick={(e) => handleVariantSelect(e, variant.id)}
+                                className={`flex items-center justify-center px-3 py-1.5 rounded-lg border transition-colors ${
+                                  selectedVariantId === variant.id
+                                    ? 'bg-white/20 text-white border-white'
+                                    : 'bg-white/5 text-white/80 border-white/20 hover:bg-white/10 hover:border-white/40'
+                                }`}
+                              >
+                                <span className="text-xs font-medium">{variant.size}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={product.variants && product.variants.length > 0 && !selectedVariantId}
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ShoppingBag className="w-4 h-4" />
+                    <span>{t('addToCart')}</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }

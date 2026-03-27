@@ -1,6 +1,6 @@
 import { Note } from '../types';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTheme } from './ThemeProvider';
+import { useLanguage } from './LanguageProvider';
+import { motion } from 'motion/react';
 
 interface NoteDiagramProps {
   topNotes: Note[];
@@ -9,91 +9,56 @@ interface NoteDiagramProps {
 }
 
 export default function NoteDiagram({ topNotes, heartNotes, baseNotes }: NoteDiagramProps) {
-  const { theme } = useTheme();
+  const { language, t } = useLanguage();
   
-  const colors = theme === 'dark' ? {
-    top: '#57534e', // stone-600
-    heart: '#78716c', // stone-500
-    base: '#a8a29e', // stone-400
-  } : {
-    top: '#d6d3d1', // stone-300
-    heart: '#a8a29e', // stone-400
-    base: '#78716c', // stone-500
-  };
+  const getNoteName = (note: Note) => language === 'be' && note.name_be ? note.name_be : note.name;
 
-  const data = [
-    { name: 'Top Notes', value: topNotes.reduce((acc, curr) => acc + curr.value, 0), color: colors.top },
-    { name: 'Heart Notes', value: heartNotes.reduce((acc, curr) => acc + curr.value, 0), color: colors.heart },
-    { name: 'Base Notes', value: baseNotes.reduce((acc, curr) => acc + curr.value, 0), color: colors.base },
-  ];
-
-  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-    const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+  const NoteGroup = ({ title, notes, delay }: { title: string, notes: Note[], delay: number }) => {
+    // Find max value to normalize bars if needed, but assuming 0-100 scale for simplicity
+    // or just using the values as relative weights.
+    const totalValue = notes.reduce((sum, n) => sum + n.value, 0);
 
     return (
-      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="10">
-        {`${(percent * 100).toFixed(0)}%`}
-      </text>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between border-b border-brand-border pb-2">
+          <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-muted">
+            {title}
+          </h4>
+          <span className="text-[10px] font-mono text-brand-muted">
+            {notes.length} {t('notes').toLowerCase()}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {notes.map((note, idx) => (
+            <div key={idx} className="space-y-1.5">
+              <div className="flex justify-between items-end">
+                <span className="text-sm font-medium text-brand-light">
+                  {getNoteName(note)}
+                </span>
+                <span className="text-[10px] font-mono text-brand-muted">
+                  {note.value}%
+                </span>
+              </div>
+              <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${note.value}%` }}
+                  transition={{ duration: 1, delay: delay + (idx * 0.1), ease: "circOut" }}
+                  className="h-full bg-white rounded-full opacity-60"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="flex items-center gap-4 h-32">
-      <div className="w-1/2 h-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={45}
-              innerRadius={20}
-              fill="#8884d8"
-              dataKey="value"
-              stroke="none"
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{ 
-                borderRadius: '8px', 
-                border: 'none', 
-                boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                backgroundColor: theme === 'dark' ? '#1c1917' : '#ffffff',
-                color: theme === 'dark' ? '#f5f5f4' : '#1c1917'
-              }}
-              itemStyle={{ color: theme === 'dark' ? '#f5f5f4' : '#444' }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      
-      <div className="w-1/2 flex flex-col justify-center gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.top }}></div>
-          <span className="text-stone-600 dark:text-stone-400 truncate" title={topNotes.map(n => n.name).join(', ')}>
-            Top: {topNotes.map(n => n.name).join(', ')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.heart }}></div>
-          <span className="text-stone-600 dark:text-stone-400 truncate" title={heartNotes.map(n => n.name).join(', ')}>
-            Heart: {heartNotes.map(n => n.name).join(', ')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors.base }}></div>
-          <span className="text-stone-600 dark:text-stone-400 truncate" title={baseNotes.map(n => n.name).join(', ')}>
-            Base: {baseNotes.map(n => n.name).join(', ')}
-          </span>
-        </div>
-      </div>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-12 py-4">
+      <NoteGroup title={t('topNotes')} notes={topNotes} delay={0.1} />
+      <NoteGroup title={t('heartNotes')} notes={heartNotes} delay={0.3} />
+      <NoteGroup title={t('baseNotes')} notes={baseNotes} delay={0.5} />
     </div>
   );
 }

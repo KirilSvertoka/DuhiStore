@@ -14,12 +14,13 @@ export default function About() {
       <Helmet>
         <title>{language === 'ru' ? 'О нас' : 'Пра нас'} | Scentique</title>
         <meta name="description" content={language === 'ru' ? 'Путешествие в мир высокой парфюмерии.' : 'Падарожжа ў свет высокай парфумерыі.'} />
+        <link rel="canonical" href={`${window.location.origin}/about`} />
       </Helmet>
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-serif text-stone-900 dark:text-stone-100">
+        <h1 className="text-4xl font-serif text-brand-light">
           {language === 'ru' ? 'Наша история' : 'Наша гісторыя'}
         </h1>
-        <p className="text-stone-500 dark:text-stone-400 max-w-2xl mx-auto">
+        <p className="text-brand-muted max-w-2xl mx-auto">
           {language === 'ru' 
             ? 'Путешествие в мир высокой парфюмерии, где мы собираем самые изысканные ароматы для современных людей.' 
             : 'Падарожжа ў свет высокай парфумерыі, дзе мы збіраем самыя вытанчаныя водары для сучасных людзей.'}
@@ -27,7 +28,7 @@ export default function About() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-        <div className="aspect-square rounded-3xl overflow-hidden bg-stone-100 dark:bg-stone-800">
+        <div className="aspect-square rounded-3xl overflow-hidden bg-brand-bg">
           <img 
             src="https://101beat.com/_next/image?url=https%3A%2F%2Fglobal.s3.cloud.ru%2Fbeats-bucket%2FF3t6qt0P8Av6JHVo6w8rrdRH1B9RJhtdNEYvyxox9ZWpW2YrZbHznXgTVXcxRsFCtPUhV1WA0njpvAptKfQDHe8yZGOrvlNdJffhrCkKa6d6QFD1CX2fZ6ujrIEcRgy3ZYGrKusrHv6dEW5wCB8B7ZrtEI2KxWhZs7tNwrzhrbutDSzT32djs07odgcb1eCAmR2grrIjYLRCZ6aLeJTtIVYhlBi7mPpZdMvkpWlzWLrCXJMJXXVrrXYPeRJCmypO.jpg&w=828&q=75" 
             alt="Perfumery Studio" 
@@ -36,15 +37,15 @@ export default function About() {
           />
         </div>
         <div className="space-y-6">
-          <h2 className="text-2xl font-serif text-stone-900 dark:text-stone-100">
+          <h2 className="text-2xl font-serif text-brand-light">
             {language === 'ru' ? 'Искусство выбора' : 'Мастацтва выбару'}
           </h2>
-          <p className="text-stone-600 dark:text-stone-400 leading-relaxed font-light">
+          <p className="text-brand-muted leading-relaxed font-light">
             {language === 'ru'
               ? 'Основанный в 2020 году, Scentique родился из страсти к нишевой парфюмерии. Мы верим, что аромат — это больше, чем просто запах. Это невидимый аксессуар, триггер воспоминаний и глубокое выражение личности.'
               : 'Заснаваны ў 2020 годзе, Scentique нарадзіўся з запалу да нішавай парфумерыі. Мы верым, што водар — гэта больш, чым проста пах. Гэта нябачны аксэсуар, трыгер успамінаў і глыбокае выяўленне асобы.'}
           </p>
-          <p className="text-stone-600 dark:text-stone-400 leading-relaxed font-light">
+          <p className="text-brand-muted leading-relaxed font-light">
             {language === 'ru'
               ? 'Наша коллекция тщательно отобрана. Мы путешествуем по миру, чтобы найти независимых парфюмеров, которые ставят качество ингредиентов и инновационные композиции выше массовой привлекательности. Каждый флакон в нашем магазине был протестирован и полюблен нашей командой.'
               : 'Наша калекцыя старанна адабрана. Мы падарожнічаем па свеце, каб знайсці незалежных парфумераў, якія ставяць якасць інгрэдыентаў і інавацыйныя кампазіцыі вышэй за масавую прывабнасць. Кожны флакон у нашай краме быў пратэставаны і ўпадабаны нашай камандай.'}
@@ -52,22 +53,22 @@ export default function About() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center pt-12 border-t border-stone-200 dark:border-stone-800">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center pt-12 border-t border-brand-border">
         <div className="space-y-2">
-          <h3 className="text-3xl font-serif text-stone-900 dark:text-stone-100">50+</h3>
-          <p className="text-sm uppercase tracking-wider text-stone-500 dark:text-stone-400">
+          <h3 className="text-3xl font-serif text-brand-light">50+</h3>
+          <p className="text-sm uppercase tracking-wider text-brand-muted">
             {language === 'ru' ? 'Уникальных ароматов' : 'Унікальных водараў'}
           </p>
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-serif text-stone-900 dark:text-stone-100">12</h3>
-          <p className="text-sm uppercase tracking-wider text-stone-500 dark:text-stone-400">
+          <h3 className="text-3xl font-serif text-brand-light">12</h3>
+          <p className="text-sm uppercase tracking-wider text-brand-muted">
             {language === 'ru' ? 'Нишевых брендов' : 'Нішавых брэндаў'}
           </p>
         </div>
         <div className="space-y-2">
-          <h3 className="text-3xl font-serif text-stone-900 dark:text-stone-100">10k+</h3>
-          <p className="text-sm uppercase tracking-wider text-stone-500 dark:text-stone-400">
+          <h3 className="text-3xl font-serif text-brand-light">10k+</h3>
+          <p className="text-sm uppercase tracking-wider text-brand-muted">
             {language === 'ru' ? 'Счастливых клиентов' : 'Шчаслівых кліентаў'}
           </p>
         </div>

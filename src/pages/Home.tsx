@@ -9,33 +9,53 @@ import { useLanguage } from '../components/LanguageProvider';
 
 export default function Home() {
   const [config, setConfig] = useState<HomeConfig | null>(null);
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [maleProducts, setMaleProducts] = useState<Product[]>([]);
+  const [femaleProducts, setFemaleProducts] = useState<Product[]>([]);
+  const [unisexProducts, setUnisexProducts] = useState<Product[]>([]);
+  const [decantProducts, setDecantProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/settings/home').then(res => res.json()),
-      fetch('/api/products').then(res => res.json())
-    ])
-      .then(([configData, productsData]) => {
+    const fetchData = async () => {
+      try {
+        const [configRes, productsRes] = await Promise.all([
+          fetch('/api/settings/home'),
+          fetch('/api/products')
+        ]);
+
+        if (!configRes.ok) throw new Error(`Config fetch failed: ${configRes.status}`);
+        if (!productsRes.ok) throw new Error(`Products fetch failed: ${productsRes.status}`);
+
+        const configData = await configRes.json();
+        const productsData: Product[] = await productsRes.json();
+
         setConfig(configData);
-        const featured = productsData.filter((p: Product) => 
-          configData.featuredProductIds.includes(p.id)
-        );
-        setFeaturedProducts(featured);
+        
+        setMaleProducts(productsData.filter(p => p.gender === 'Male').slice(0, 4));
+        setFemaleProducts(productsData.filter(p => p.gender === 'Female').slice(0, 4));
+        setUnisexProducts(productsData.filter(p => p.gender === 'Unisex').slice(0, 4));
+        setDecantProducts(productsData.filter(p => 
+          p.tags?.includes('decant') || 
+          p.tags?.includes('отливант') || 
+          p.name.toLowerCase().includes('отливант') ||
+          p.description.toLowerCase().includes('отливант')
+        ).slice(0, 4));
+
         setLoading(false);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error('Failed to load home data', err);
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
   if (loading || !config) {
     return (
       <div className="flex justify-center items-center h-[80vh]">
-        <div className="animate-pulse rounded-full bg-stone-200 dark:bg-stone-800 h-12 w-12"></div>
+        <div className="animate-pulse rounded-full bg-brand-border h-12 w-12"></div>
       </div>
     );
   }
@@ -48,38 +68,37 @@ export default function Home() {
       className="w-full"
     >
       <Helmet>
-        <title>Scentique | High-End Niche Perfumery</title>
-        <meta name="description" content="Discover our curated collection of minimalist fragrances. Each bottle tells a story through carefully balanced top, heart, and base notes." />
+        <title>Scentique | Элитная нишевая парфюмерия в Беларуси</title>
+        <meta name="description" content="Откройте для себя коллекцию эксклюзивных нишевых ароматов в Scentique. Минимализм, качество и уникальные композиции. Доставка по всей Беларуси." />
+        <meta property="og:title" content="Scentique | Элитная нишевая парфюмерия" />
+        <meta property="og:description" content="Эксклюзивные ароматы для ценителей. Найдите свой идеальный парфюм в нашей коллекции." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.origin} />
+        <meta property="og:image" content={config.hero.slides[0]?.image} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href={window.location.origin} />
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative h-[85vh] w-full overflow-hidden">
-        <motion.img 
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          src={config.hero.image} 
-          alt="Hero" 
-          className="absolute inset-0 w-full h-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-black/40" />
+      <section className="relative h-[85vh] w-full overflow-hidden bg-[#660010]">
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
           <motion.h1 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-serif text-white mb-6 tracking-tight max-w-5xl"
+            className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4"
           >
-            {config.hero.title}
+            <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>Архетип:</span>
+            <span style={{ fontFamily: 'var(--font-arsenica)' }}>Парфюмерная крама</span>
           </motion.h1>
           <motion.p 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-lg md:text-xl text-stone-200 font-light max-w-2xl mb-10"
+            className="text-lg md:text-xl text-white/80 font-light max-w-2xl mb-10"
+            style={{ fontFamily: 'var(--font-adventor)' }}
           >
-            {config.hero.subtitle}
+            Множественность архетипов. Множественность ароматов
           </motion.p>
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -88,7 +107,7 @@ export default function Home() {
           >
             <Link 
               to="/catalog" 
-              className="inline-flex items-center gap-2 bg-white text-stone-900 px-8 py-4 rounded-full font-medium uppercase tracking-widest hover:bg-stone-100 transition-colors"
+              className="inline-flex items-center gap-2 bg-white text-[#660010] px-8 py-4 rounded-full font-medium uppercase tracking-widest hover:bg-white/90 transition-colors"
             >
               {t('shopCollection')}
               <ArrowRight className="w-4 h-4" />
@@ -97,37 +116,156 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      {featuredProducts.length > 0 && (
-        <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-serif text-stone-900 dark:text-stone-100">{config.featuredProductsTitle}</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="h-[60vh] rounded-2xl overflow-hidden"
+      {/* Sections */}
+      <div className="py-24 space-y-24">
+        {/* Для него */}
+        {maleProducts.length > 0 && (
+          <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-12">
+              <h2 className="text-3xl font-serif text-brand-light">
+                {language === 'be' ? 'Для яго' : 'Для него'}
+              </h2>
+              <Link 
+                to="/catalog?gender=Male" 
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted hover:text-white transition-colors"
               >
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
-          </div>
-          <div className="text-center mt-12">
-            <Link 
-              to="/catalog" 
-              className="inline-flex items-center gap-2 text-stone-900 dark:text-stone-100 font-medium uppercase tracking-widest hover:text-stone-600 dark:hover:text-stone-400 transition-colors"
-            >
-              {t('viewAll')}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </section>
-      )}
+                {t('viewAll')}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {maleProducts.map((product, pIdx) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: pIdx * 0.1 }}
+                  className="h-[50vh] rounded-2xl overflow-hidden"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center sm:hidden">
+              <Link to="/catalog?gender=Male" className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted">
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Для неё */}
+        {femaleProducts.length > 0 && (
+          <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-12">
+              <h2 className="text-3xl font-serif text-brand-light">
+                {language === 'be' ? 'Для яе' : 'Для неё'}
+              </h2>
+              <Link 
+                to="/catalog?gender=Female" 
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted hover:text-white transition-colors"
+              >
+                {t('viewAll')}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {femaleProducts.map((product, pIdx) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: pIdx * 0.1 }}
+                  className="h-[50vh] rounded-2xl overflow-hidden"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center sm:hidden">
+              <Link to="/catalog?gender=Female" className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted">
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Унисекс */}
+        {unisexProducts.length > 0 && (
+          <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-12">
+              <h2 className="text-3xl font-serif text-brand-light">
+                {language === 'be' ? 'Унісэкс' : 'Унисекс'}
+              </h2>
+              <Link 
+                to="/catalog?gender=Unisex" 
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted hover:text-white transition-colors"
+              >
+                {t('viewAll')}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {unisexProducts.map((product, pIdx) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: pIdx * 0.1 }}
+                  className="h-[50vh] rounded-2xl overflow-hidden"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center sm:hidden">
+              <Link to="/catalog?gender=Unisex" className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted">
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {/* Отливанты */}
+        {decantProducts.length > 0 && (
+          <section className="px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+            <div className="flex justify-between items-end mb-12">
+              <h2 className="text-3xl font-serif text-brand-light">
+                {language === 'be' ? 'Адліванты' : 'Отливанты'}
+              </h2>
+              <Link 
+                to="/catalog?category=decant" 
+                className="hidden sm:inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted hover:text-white transition-colors"
+              >
+                {t('viewAll')}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {decantProducts.map((product, pIdx) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.6, delay: pIdx * 0.1 }}
+                  className="h-[50vh] rounded-2xl overflow-hidden"
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-8 text-center sm:hidden">
+              <Link to="/catalog?category=decant" className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-widest text-brand-muted">
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </section>
+        )}
+      </div>
 
       {/* Promo Images / Gallery */}
       {config.promoImages && config.promoImages.length > 0 && (

@@ -1,5 +1,6 @@
 export interface Note {
   name: string;
+  name_be?: string;
   value: number;
 }
 
@@ -12,22 +13,49 @@ export interface ProductVariant {
   sku: string;
 }
 
+export function getVariantType(size: string, language: string): string {
+  const lowerSize = size.toLowerCase();
+  if (lowerSize.includes('тестер') || lowerSize.includes('tester')) {
+    return language === 'be' ? 'Тэстар' : 'Тестер';
+  }
+  if (lowerSize.includes('отливант') || lowerSize.includes('decant')) {
+    return language === 'be' ? 'Адлівант' : 'Отливант';
+  }
+  
+  // Extract ml
+  const mlMatch = lowerSize.match(/(\d+)\s*(ml|мл)/);
+  if (mlMatch) {
+    const ml = parseInt(mlMatch[1], 10);
+    if (ml <= 20) {
+      return language === 'be' ? 'Адлівант' : 'Отливант';
+    } else {
+      return language === 'be' ? 'Флакон' : 'Флакон';
+    }
+  }
+  
+  return language === 'be' ? 'Флакон' : 'Флакон';
+}
+
 export interface Product {
   id: number;
   name: string;
   brand: string;
   description: string;
+  description_be?: string;
   imageUrl: string;
   images?: string[];
+  slug: string;
   price: number; // Base price or starting price
   topNotes: Note[];
   heartNotes: Note[];
   baseNotes: Note[];
   gender: 'Male' | 'Female' | 'Unisex';
   scentFamilies: string[];
+  scentFamilies_be?: string[];
   concentration: 'EDP' | 'EDT' | 'Parfum' | 'Cologne';
   stockThreshold: number;
   tags: string[];
+  tags_be?: string[];
   variants?: ProductVariant[];
 }
 
@@ -82,17 +110,20 @@ export interface Review {
 export interface CMSPage {
   id: string;
   title: string;
+  title_be?: string;
   content: string;
+  content_be?: string;
   updatedAt: string;
 }
 
 export interface HomeConfig {
-  announcement: { text: string; active: boolean };
+  announcement: { text: string; text_be?: string; active: boolean };
   hero: { 
-    slides: { image: string; title: string; subtitle: string; link?: string; timerEnd?: string }[] 
+    slides: { image: string; title: string; title_be?: string; subtitle: string; subtitle_be?: string; link?: string; timerEnd?: string }[] 
   };
   featuredProductsTitle: string;
+  featuredProductsTitle_be?: string;
   featuredProductIds: number[];
   promoImages: string[];
-  dynamicBlocks: { type: 'New' | 'BestSellers' | 'Recommended'; title: string; active: boolean }[];
+  dynamicBlocks: { type: 'New' | 'BestSellers' | 'Recommended'; title: string; title_be?: string; active: boolean }[];
 }

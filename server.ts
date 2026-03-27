@@ -7,6 +7,9 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import multer from 'multer';
 import fs from 'fs';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
 dotenv.config();
 
@@ -27,6 +30,34 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 const app = express();
+
+// Trust proxy for rate limiting
+app.set('trust proxy', 1);
+
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disabled for dev/preview compatibility
+  crossOriginEmbedderPolicy: false
+}));
+app.use(cors());
+app.disable('x-powered-by');
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Limit each IP to 1000 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again later.'
+});
+app.use('/api', limiter);
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login attempts per windowMs
+  message: 'Too many login attempts, please try again later.'
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/uploads', express.static(uploadDir));
@@ -36,19 +67,31 @@ const activeTokens = new Set<string>();
 
 // Auth Middleware
 const requireAuth = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  let token = '';
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Unauthorized' });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
   }
-  const token = authHeader.split(' ')[1];
-  if (!activeTokens.has(token)) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+
+  if (!token || !activeTokens.has(token)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
 };
 
 // Initialize SQLite Database
-const db = new Database('perfume.db');
+let db: Database.Database;
+try {
+  db = new Database('perfume.db');
+  // Test if it's corrupt
+  db.pragma('integrity_check');
+} catch (err: any) {
+  console.error('Database is corrupt or failed to open, recreating...', err);
+  if (fs.existsSync('perfume.db')) {
+    fs.unlinkSync('perfume.db');
+  }
+  db = new Database('perfume.db');
+}
 
 // Create tables if they don't exist
 db.exec(`
@@ -155,27 +198,30 @@ db.exec(`
 
 // Seed default home config
 const defaultHomeConfig = {
-  announcement: { text: "Бесплатная доставка от 150 BYN", active: true },
+  announcement: { text: "Бесплатная доставка от 150 BYN", text_be: "Бясплатная дастаўка ад 150 BYN", active: true },
   hero: {
     slides: [
       {
         image: "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=2000&auto=format&fit=crop",
         title: "Искусство минимализма",
+        title_be: "Мастацтва мінімалізму",
         subtitle: "Найдите свой идеальный аромат.",
+        subtitle_be: "Знайдзіце свой ідэальны водар.",
         link: "/catalog"
       }
     ]
   },
   featuredProductsTitle: "Новые поступления",
+  featuredProductsTitle_be: "Новыя паступленні",
   featuredProductIds: [1, 2, 3],
   promoImages: [
     "https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?q=80&w=800&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop"
   ],
   dynamicBlocks: [
-    { type: 'New', title: 'Новинки', active: true },
-    { type: 'BestSellers', title: 'Хиты продаж', active: true },
-    { type: 'Recommended', title: 'Рекомендуем', active: true }
+    { type: 'New', title: 'Новинки', title_be: 'Навінкі', active: true },
+    { type: 'BestSellers', title: 'Хиты продаж', title_be: 'Хіты продажаў', active: true },
+    { type: 'Recommended', title: 'Рекомендуем', title_be: 'Рэкамендуем', active: true }
   ]
 };
 db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('home_config', JSON.stringify(defaultHomeConfig));
@@ -187,8 +233,26 @@ const migrations = [
   "ALTER TABLE products ADD COLUMN scentFamilies TEXT DEFAULT '[]'",
   "ALTER TABLE products ADD COLUMN concentration TEXT DEFAULT 'EDP'",
   "ALTER TABLE products ADD COLUMN stockThreshold INTEGER DEFAULT 5",
-  "ALTER TABLE products ADD COLUMN tags TEXT DEFAULT '[]'"
+  "ALTER TABLE products ADD COLUMN tags TEXT DEFAULT '[]'",
+  "ALTER TABLE products ADD COLUMN description_be TEXT",
+  "ALTER TABLE products ADD COLUMN scentFamilies_be TEXT DEFAULT '[]'",
+  "ALTER TABLE products ADD COLUMN tags_be TEXT DEFAULT '[]'",
+  "ALTER TABLE cms_pages ADD COLUMN title_be TEXT",
+  "ALTER TABLE cms_pages ADD COLUMN content_be TEXT",
+  "ALTER TABLE products ADD COLUMN slug TEXT"
 ];
+
+function slugify(text: string) {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\d-]+/gu, '')
+    .replace(/--+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
+}
 
 for (const migration of migrations) {
   try {
@@ -196,6 +260,12 @@ for (const migration of migrations) {
   } catch (e) {
     // Column likely already exists
   }
+}
+
+// Update existing products with slugs if they don't have one
+const productsWithoutSlug = db.prepare('SELECT id, name FROM products WHERE slug IS NULL').all() as { id: number, name: string }[];
+for (const p of productsWithoutSlug) {
+  db.prepare('UPDATE products SET slug = ? WHERE id = ?').run(slugify(p.name), p.id);
 }
 
 // Insert some initial data if empty
@@ -338,6 +408,90 @@ if (count.count <= 2) {
     gender: 'Unisex',
     scentFamilies: JSON.stringify(['Woody', 'Floral'])
   });
+
+  // Add a test product with all variant types
+  insert.run({
+    name: 'Test All Variants',
+    brand: 'Test Brand',
+    description: 'Специальный тестовый товар со всеми возможными вариантами объемов (отливанты, флаконы, тестеры).',
+    imageUrl: 'https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=800&auto=format&fit=crop',
+    price: 15,
+    topNotes: JSON.stringify([{name: 'Test', value: 50}]),
+    heartNotes: JSON.stringify([{name: 'Test', value: 50}]),
+    baseNotes: JSON.stringify([{name: 'Test', value: 50}]),
+    gender: 'Unisex',
+    scentFamilies: JSON.stringify(['Fresh'])
+  });
+
+  // Add variants to the test product
+  const testProductId = (db.prepare('SELECT id FROM products WHERE name = ?').get('Test All Variants') as any)?.id;
+  if (testProductId) {
+    const insertVariant = db.prepare('INSERT INTO product_variants (product_id, size, price, stock, sku) VALUES (?, ?, ?, ?, ?)');
+    // Отливанты (<= 20ml)
+    insertVariant.run(testProductId, '2ml', 15, 100, 'TEST-2ML');
+    insertVariant.run(testProductId, '5ml', 35, 100, 'TEST-5ML');
+    insertVariant.run(testProductId, '10ml', 65, 100, 'TEST-10ML');
+    insertVariant.run(testProductId, '15ml', 90, 100, 'TEST-15ML');
+    // Флаконы (> 20ml)
+    insertVariant.run(testProductId, '30ml', 150, 50, 'TEST-30ML');
+    insertVariant.run(testProductId, '50ml', 220, 30, 'TEST-50ML');
+    insertVariant.run(testProductId, '100ml', 380, 20, 'TEST-100ML');
+    // Тестеры
+    insertVariant.run(testProductId, 'Tester 100ml', 320, 10, 'TEST-TST-100ML');
+  }
+
+  // Add test users if none exist
+  const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as any).count;
+  if (userCount === 0) {
+    const insertUser = db.prepare('INSERT INTO users (email, name, phone, region, segment) VALUES (?, ?, ?, ?, ?)');
+    insertUser.run('nexus3641@gmail.com', 'Nexus User', '+375291112233', 'Minsk', 'VIP');
+    insertUser.run('ivan@example.com', 'Иван Иванов', '+375290000000', 'Brest', 'Regular');
+    insertUser.run('maria@example.com', 'Мария Петрова', '+375441234567', 'Gomel', 'Regular');
+  }
+
+  // Add test orders if none exist
+  const orderCount = (db.prepare('SELECT COUNT(*) as count FROM orders').get() as any).count;
+  if (orderCount === 0) {
+    const insertOrder = db.prepare(`
+      INSERT INTO orders (user_id, customer_name, customer_email, customer_phone, customer_region, total, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const now = new Date();
+    const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+    const lastWeek = new Date(now); lastWeek.setDate(now.getDate() - 7);
+    const lastMonth = new Date(now); lastMonth.setDate(now.getDate() - 30);
+
+    insertOrder.run(1, 'Nexus User', 'nexus3641@gmail.com', '+375291112233', 'Minsk', 645, 'Delivered', lastMonth.toISOString());
+    insertOrder.run(2, 'Иван Иванов', 'ivan@example.com', '+375290000000', 'Brest', 320, 'Shipped', lastWeek.toISOString());
+    insertOrder.run(3, 'Мария Петрова', 'maria@example.com', '+375441234567', 'Gomel', 290, 'New', yesterday.toISOString());
+    insertOrder.run(1, 'Nexus User', 'nexus3641@gmail.com', '+375291112233', 'Minsk', 325, 'New', now.toISOString());
+
+    // Add order items
+    const insertOrderItem = db.prepare(`
+      INSERT INTO order_items (order_id, product_id, product_name, quantity, price)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    insertOrderItem.run(1, 1, 'Santal 33', 1, 320);
+    insertOrderItem.run(1, 2, 'Baccarat Rouge 540', 1, 325);
+    insertOrderItem.run(2, 1, 'Santal 33', 1, 320);
+    insertOrderItem.run(3, 3, 'Gypsy Water', 1, 290);
+    insertOrderItem.run(4, 2, 'Baccarat Rouge 540', 1, 325);
+  }
+
+  // Add test product views if none exist
+  const viewCount = (db.prepare('SELECT COUNT(*) as count FROM product_views').get() as any).count;
+  if (viewCount === 0) {
+    const insertView = db.prepare('INSERT INTO product_views (product_id, viewed_at) VALUES (?, ?)');
+    const productsList = db.prepare('SELECT id FROM products').all() as {id: number}[];
+    for (const p of productsList) {
+      for (let i = 0; i < 10; i++) {
+        const viewDate = new Date();
+        viewDate.setDate(viewDate.getDate() - Math.floor(Math.random() * 30));
+        insertView.run(p.id, viewDate.toISOString());
+      }
+    }
+  }
 }
 
 // Update existing records to have genders if they were created before the migration
@@ -345,6 +499,12 @@ db.exec(`
   UPDATE products SET gender = 'Male' WHERE name IN ('Oud Wood', 'Aventus') AND gender IS NULL;
   UPDATE products SET gender = 'Female' WHERE name IN ('Portrait of a Lady', 'Delina') AND gender IS NULL;
   UPDATE products SET gender = 'Unisex' WHERE gender IS NULL;
+  
+  -- Seed concentrations for testing
+  UPDATE products SET concentration = 'Parfum' WHERE name IN ('Baccarat Rouge 540', 'Black Phantom');
+  UPDATE products SET concentration = 'EDT' WHERE name IN ('Gypsy Water', 'Mojave Ghost');
+  UPDATE products SET concentration = 'EDC' WHERE name IN ('Aventus');
+  UPDATE products SET concentration = 'Oil' WHERE name IN ('Santal 33');
 `);
 
 // Update any existing picsum.photos to unsplash
@@ -380,7 +540,7 @@ Sitemap: ${domain}/sitemap.xml`);
 app.get('/sitemap.xml', (req, res) => {
   try {
     const domain = req.protocol + '://' + req.get('host');
-    const products = db.prepare('SELECT id FROM products').all() as { id: number }[];
+    const products = db.prepare('SELECT slug FROM products').all() as { slug: string }[];
     
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -388,6 +548,11 @@ app.get('/sitemap.xml', (req, res) => {
     <loc>${domain}/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${domain}/catalog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>${domain}/about</loc>
@@ -406,12 +571,14 @@ app.get('/sitemap.xml', (req, res) => {
   </url>`;
 
     products.forEach(product => {
-      xml += `
+      if (product.slug) {
+        xml += `
   <url>
-    <loc>${domain}/product/${product.id}</loc>
+    <loc>${domain}/catalog/${product.slug}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>`;
+      }
     });
 
     xml += `\n</urlset>`;
@@ -431,6 +598,15 @@ app.post('/api/upload', requireAuth, upload.single('image'), (req, res) => {
 });
 
 // API Routes
+app.get('/api/brands', (req, res) => {
+  try {
+    const brands = db.prepare('SELECT DISTINCT brand FROM products ORDER BY brand ASC').all();
+    res.json(brands.map((b: any) => b.brand));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch brands' });
+  }
+});
+
 app.get('/api/settings/home', (req, res) => {
   try {
     const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('home_config') as { value: string };
@@ -454,7 +630,7 @@ app.put('/api/settings/home', requireAuth, (req, res) => {
   }
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', loginLimiter, (req, res) => {
   const { username, password } = req.body;
   const adminUser = process.env.ADMIN_USERNAME || 'admin';
   const adminPass = process.env.ADMIN_PASSWORD || 'password123';
@@ -477,24 +653,117 @@ app.post('/api/logout', (req, res) => {
   res.status(204).send();
 });
 
+app.get('/api/products/:slug', (req, res) => {
+  const { slug } = req.params;
+  try {
+    const product = db.prepare('SELECT * FROM products WHERE slug = ? OR id = ?').get(slug, slug) as any;
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    const variants = db.prepare('SELECT * FROM product_variants WHERE product_id = ?').all(product.id);
+    const result = {
+      ...product,
+      images: JSON.parse(product.images || '[]'),
+      scentFamilies: JSON.parse(product.scentFamilies || '[]'),
+      scentFamilies_be: JSON.parse(product.scentFamilies_be || '[]'),
+      topNotes: JSON.parse(product.topNotes),
+      heartNotes: JSON.parse(product.heartNotes),
+      baseNotes: JSON.parse(product.baseNotes),
+      tags: JSON.parse(product.tags || '[]'),
+      tags_be: JSON.parse(product.tags_be || '[]'),
+      variants
+    };
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch product' });
+  }
+});
+
 app.get('/api/products', (req, res) => {
   try {
-    const products = db.prepare('SELECT * FROM products').all();
-    const result = products.map((p: any) => {
+    const { search, brand, gender, families, sort, category } = req.query;
+
+    let query = 'SELECT * FROM products WHERE 1=1';
+    const params: any[] = [];
+
+    if (search) {
+      query += ' AND (name LIKE ? OR brand LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    if (brand && brand !== 'All') {
+      query += ' AND brand = ?';
+      params.push(brand);
+    }
+
+    if (gender && gender !== 'All') {
+      query += ' AND gender = ?';
+      params.push(gender);
+    }
+
+    if (category && category !== 'All') {
+      if (category === 'decant') {
+        query += ' AND (name LIKE ? OR description LIKE ? OR tags LIKE ?)';
+        params.push('%отливант%', '%отливант%', '%отливант%');
+      } else {
+        let concentration = '';
+        switch (category) {
+          case 'perfume': concentration = 'Parfum'; break;
+          case 'eau_de_toilette': concentration = 'EDT'; break;
+          case 'cologne': concentration = 'EDC'; break;
+          case 'oil': concentration = 'Oil'; break;
+        }
+        if (concentration) {
+          query += ' AND concentration = ?';
+          params.push(concentration);
+        }
+      }
+    }
+
+    let products = db.prepare(query).all(...params) as any[];
+
+    // In-memory filtering for scent families
+    if (families) {
+      const familyList = (families as string).split(',');
+      products = products.filter((p: any) => {
+        const pFamilies = JSON.parse(p.scentFamilies || '[]');
+        return pFamilies.some((f: string) => familyList.includes(f));
+      });
+    }
+
+    let result = products.map((p: any) => {
       const variants = db.prepare('SELECT * FROM product_variants WHERE product_id = ?').all(p.id);
       return {
         ...p,
         images: JSON.parse(p.images || '[]'),
         scentFamilies: JSON.parse(p.scentFamilies || '[]'),
+        scentFamilies_be: JSON.parse(p.scentFamilies_be || '[]'),
         topNotes: JSON.parse(p.topNotes),
         heartNotes: JSON.parse(p.heartNotes),
         baseNotes: JSON.parse(p.baseNotes),
         tags: JSON.parse(p.tags || '[]'),
+        tags_be: JSON.parse(p.tags_be || '[]'),
         variants
       };
     });
+
+    // Sorting
+    if (sort) {
+      result.sort((a: any, b: any) => {
+        const getPrice = (p: any) => p.variants && p.variants.length > 0 ? Math.min(...p.variants.map((v: any) => v.price)) : p.price;
+        switch (sort) {
+          case 'name-asc': return a.name.localeCompare(b.name);
+          case 'name-desc': return b.name.localeCompare(a.name);
+          case 'price-asc': return getPrice(a) - getPrice(b);
+          case 'price-desc': return getPrice(b) - getPrice(a);
+          default: return 0;
+        }
+      });
+    }
+
     res.json(result);
   } catch (error) {
+    console.error('Failed to fetch products:', error);
     res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
@@ -523,6 +792,14 @@ app.get('/api/admin/dashboard', requireAuth, (req, res) => {
 
     const recentReviews = db.prepare("SELECT * FROM reviews WHERE status = 'Pending' ORDER BY created_at DESC LIMIT 5").all();
 
+    const salesTrend = db.prepare(`
+      SELECT date(created_at) as name, SUM(total) as sales
+      FROM orders
+      WHERE created_at >= date('now', '-7 days') AND status != 'Cancelled'
+      GROUP BY date(created_at)
+      ORDER BY date(created_at) ASC
+    `).all();
+
     res.json({
       metrics: {
         salesToday: salesToday?.total || 0,
@@ -534,7 +811,8 @@ app.get('/api/admin/dashboard', requireAuth, (req, res) => {
       alerts: {
         lowStock,
         pendingReviews: recentReviews.length
-      }
+      },
+      salesTrend
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
@@ -543,13 +821,17 @@ app.get('/api/admin/dashboard', requireAuth, (req, res) => {
 
 // Orders Management
 app.get('/api/admin/orders', requireAuth, (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const offset = (page - 1) * limit;
   try {
-    const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC').all();
+    const total = db.prepare('SELECT COUNT(*) as count FROM orders').get() as any;
+    const orders = db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT ? OFFSET ?').all(limit, offset);
     const result = orders.map((o: any) => {
       const items = db.prepare('SELECT * FROM order_items WHERE order_id = ?').all(o.id);
       return { ...o, items };
     });
-    res.json(result);
+    res.json({ data: result, total: total.count, page, limit });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
@@ -568,7 +850,11 @@ app.put('/api/admin/orders/:id', requireAuth, (req, res) => {
 
 // Users Management
 app.get('/api/admin/users', requireAuth, (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const offset = (page - 1) * limit;
   try {
+    const total = db.prepare('SELECT COUNT(*) as count FROM users').get() as any;
     const users = db.prepare(`
       SELECT u.*, 
              COUNT(o.id) as orderCount, 
@@ -577,8 +863,10 @@ app.get('/api/admin/users', requireAuth, (req, res) => {
       FROM users u
       LEFT JOIN orders o ON u.id = o.user_id
       GROUP BY u.id
-    `).all();
-    res.json(users);
+      ORDER BY u.created_at DESC
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+    res.json({ data: users, total: total.count, page, limit });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
   }
@@ -586,14 +874,19 @@ app.get('/api/admin/users', requireAuth, (req, res) => {
 
 // Reviews Management
 app.get('/api/admin/reviews', requireAuth, (req, res) => {
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+  const offset = (page - 1) * limit;
   try {
+    const total = db.prepare('SELECT COUNT(*) as count FROM reviews').get() as any;
     const reviews = db.prepare(`
       SELECT r.*, p.name as productName 
       FROM reviews r 
       JOIN products p ON r.product_id = p.id 
       ORDER BY r.created_at DESC
-    `).all();
-    res.json(reviews);
+      LIMIT ? OFFSET ?
+    `).all(limit, offset);
+    res.json({ data: reviews, total: total.count, page, limit });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch reviews' });
   }
@@ -620,10 +913,10 @@ app.get('/api/admin/cms', requireAuth, (req, res) => {
 });
 
 app.put('/api/admin/cms/:id', requireAuth, (req, res) => {
-  const { title, content } = req.body;
+  const { title, title_be, content, content_be } = req.body;
   try {
-    db.prepare('INSERT OR REPLACE INTO cms_pages (id, title, content, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)')
-      .run(req.params.id, title, content);
+    db.prepare('INSERT OR REPLACE INTO cms_pages (id, title, title_be, content, content_be, updated_at) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)')
+      .run(req.params.id, title, title_be || null, content, content_be || null);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update CMS page' });
@@ -746,16 +1039,17 @@ app.get('/api/stats/views-over-time', requireAuth, (req, res) => {
 });
 
 app.post('/api/products', requireAuth, (req, res) => {
-  const { name, brand, description, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, concentration, stockThreshold, tags, variants } = req.body;
+  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, variants } = req.body;
+  const slug = slugify(name);
   
   try {
     const insert = db.prepare(`
-      INSERT INTO products (name, brand, description, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, concentration, stockThreshold, tags)
-      VALUES (@name, @brand, @description, @imageUrl, @images, @price, @topNotes, @heartNotes, @baseNotes, @gender, @scentFamilies, @concentration, @stockThreshold, @tags)
+      INSERT INTO products (name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, slug)
+      VALUES (@name, @brand, @description, @description_be, @imageUrl, @images, @price, @topNotes, @heartNotes, @baseNotes, @gender, @scentFamilies, @scentFamilies_be, @concentration, @stockThreshold, @tags, @tags_be, @slug)
     `);
     
     const result = insert.run({
-      name, brand, description, imageUrl, 
+      name, brand, description, description_be: description_be || null, imageUrl, 
       images: JSON.stringify(images || []),
       price,
       topNotes: JSON.stringify(topNotes || []),
@@ -763,9 +1057,12 @@ app.post('/api/products', requireAuth, (req, res) => {
       baseNotes: JSON.stringify(baseNotes || []),
       gender,
       scentFamilies: JSON.stringify(scentFamilies || []),
+      scentFamilies_be: JSON.stringify(scentFamilies_be || []),
       concentration,
       stockThreshold,
-      tags: JSON.stringify(tags || [])
+      tags: JSON.stringify(tags || []),
+      tags_be: JSON.stringify(tags_be || []),
+      slug
     });
     
     const productId = result.lastInsertRowid;
@@ -799,17 +1096,18 @@ app.delete('/api/products/:id', requireAuth, (req, res) => {
 
 app.put('/api/products/:id', requireAuth, (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { name, brand, description, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, concentration, stockThreshold, tags, variants } = req.body;
+  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, variants } = req.body;
+  const slug = slugify(name);
   
   try {
     db.prepare(`
       UPDATE products 
-      SET name = @name, brand = @brand, description = @description, imageUrl = @imageUrl, images = @images,
+      SET name = @name, brand = @brand, description = @description, description_be = @description_be, imageUrl = @imageUrl, images = @images,
           price = @price, topNotes = @topNotes, heartNotes = @heartNotes, baseNotes = @baseNotes, gender = @gender,
-          scentFamilies = @scentFamilies, concentration = @concentration, stockThreshold = @stockThreshold, tags = @tags
+          scentFamilies = @scentFamilies, scentFamilies_be = @scentFamilies_be, concentration = @concentration, stockThreshold = @stockThreshold, tags = @tags, tags_be = @tags_be, slug = @slug
       WHERE id = @id
     `).run({
-      id, name, brand, description, imageUrl,
+      id, name, brand, description, description_be: description_be || null, imageUrl,
       images: JSON.stringify(images || []),
       price,
       topNotes: JSON.stringify(topNotes || []),
@@ -817,9 +1115,12 @@ app.put('/api/products/:id', requireAuth, (req, res) => {
       baseNotes: JSON.stringify(baseNotes || []),
       gender,
       scentFamilies: JSON.stringify(scentFamilies || []),
+      scentFamilies_be: JSON.stringify(scentFamilies_be || []),
       concentration,
       stockThreshold,
-      tags: JSON.stringify(tags || [])
+      tags: JSON.stringify(tags || []),
+      tags_be: JSON.stringify(tags_be || []),
+      slug
     });
 
     db.prepare('DELETE FROM product_variants WHERE product_id = ?').run(id);
@@ -862,9 +1163,69 @@ app.get('/api/admin/export/:type', requireAuth, (req, res) => {
       return res.send(`${headers}\n${rows}`);
     }
 
+    res.type('application/json');
+    res.attachment(`${type}_export.json`);
     res.json(data);
   } catch (error) {
     res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+app.post('/api/orders', async (req, res) => {
+  const { customer_name, customer_phone, items, total } = req.body;
+  
+  try {
+    const insertOrder = db.prepare(`
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_region, total, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = insertOrder.run(customer_name, '', customer_phone, '', total, 'New');
+    const orderId = result.lastInsertRowid;
+    
+    const insertOrderItem = db.prepare(`
+      INSERT INTO order_items (order_id, product_id, variant_id, product_name, variant_size, quantity, price)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    for (const item of items) {
+      insertOrderItem.run(
+        orderId, 
+        item.id || item.product_id, 
+        item.selectedVariantId || null, 
+        item.name || item.product_name, 
+        item.selectedVariantSize || null, 
+        item.quantity, 
+        item.price
+      );
+    }
+    
+    // Telegram Notification
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    
+    if (botToken && chatId) {
+      const itemsText = items.map((item: any) => {
+        const variantInfo = item.selectedVariantSize ? ` (${item.selectedVariantSize})` : '';
+        return `• ${item.name}${variantInfo} x${item.quantity} (${item.price} BYN)`;
+      }).join('\n');
+      const text = `🛍 *Новый заказ #${orderId}*\n\n👤 *Клиент:* ${customer_name}\n📞 *Телефон:* ${customer_phone}\n\n📦 *Товары:*\n${itemsText}\n\n💰 *Итого:* ${total} BYN`;
+      
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: 'Markdown',
+        }),
+      });
+    }
+    
+    res.status(201).json({ success: true, orderId });
+  } catch (error) {
+    console.error('Order creation error:', error);
+    res.status(500).json({ error: 'Failed to create order' });
   }
 });
 
@@ -901,6 +1262,33 @@ app.post('/api/callback', async (req, res) => {
   } catch (error) {
     console.error('Telegram error:', error);
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  try {
+    const products = db.prepare('SELECT slug FROM products').all() as { slug: string }[];
+    const baseUrl = process.env.APP_URL || 'https://ais-pre-jh4opa624el2qtdmd3kuys-422099355245.europe-west2.run.app';
+    
+    const staticPages = ['', '/catalog', '/contacts', '/reviews', '/about'];
+    const productPages = products.map(p => `/catalog/${p.slug}`);
+    
+    const allPages = [...staticPages, ...productPages];
+    
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  ${allPages.map(page => `
+  <url>
+    <loc>${baseUrl}${page}</loc>
+    <changefreq>${page.includes('/catalog/') ? 'weekly' : 'daily'}</changefreq>
+    <priority>${page === '' ? '1.0' : (page.includes('/catalog/') ? '0.8' : '0.5')}</priority>
+  </url>`).join('')}
+</urlset>`;
+
+    res.header('Content-Type', 'application/xml');
+    res.send(sitemap);
+  } catch (error) {
+    res.status(500).send('Error generating sitemap');
   }
 });
 

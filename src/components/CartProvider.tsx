@@ -3,16 +3,20 @@ import { Product } from '../types';
 
 export interface CartItem extends Product {
   quantity: number;
+  selectedVariantId?: number;
+  selectedVariantSize?: string;
+  price: number; // The price of the selected variant or base price
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product) => void;
-  removeFromCart: (productId: number) => void;
-  updateQuantity: (productId: number, quantity: number) => void;
+  addToCart: (product: Product, selectedVariantId?: number) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, quantity: number) => void;
   isCartOpen: boolean;
   setIsCartOpen: (isOpen: boolean) => void;
   total: number;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -28,30 +32,58 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('cart', JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, selectedVariantId?: number) => {
     setItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const variant = product.variants?.find(v => v.id === selectedVariantId);
+      const cartItemId = selectedVariantId ? `${product.id}-${selectedVariantId}` : `${product.id}`;
+      
+      const existing = prev.find(item => {
+        const itemKey = item.selectedVariantId ? `${item.id}-${item.selectedVariantId}` : `${item.id}`;
+        return itemKey === cartItemId;
+      });
+
       if (existing) {
-        return prev.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
+        return prev.map(item => {
+          const itemKey = item.selectedVariantId ? `${item.id}-${item.selectedVariantId}` : `${item.id}`;
+          return itemKey === cartItemId ? { ...item, quantity: item.quantity + 1 } : item;
+        });
       }
-      return [...prev, { ...product, quantity: 1 }];
+
+      const newItem: CartItem = {
+        ...product,
+        quantity: 1,
+        selectedVariantId: variant?.id,
+        selectedVariantSize: variant?.size,
+        price: variant ? variant.price : product.price
+      };
+      return [...prev, newItem];
     });
     setIsCartOpen(true);
   };
 
-  const removeFromCart = (productId: number) => {
-    setItems(prev => prev.filter(item => item.id !== productId));
+  const removeFromCart = (cartItemId: string) => {
+    setItems(prev => prev.filter(item => {
+      const itemKey = item.selectedVariantId ? `${item.id}-${item.selectedVariantId}` : `${item.id}`;
+      return itemKey !== cartItemId;
+    }));
   };
 
-  const updateQuantity = (productId: number, quantity: number) => {
-    if (quantity < 1) return removeFromCart(productId);
-    setItems(prev => prev.map(item => item.id === productId ? { ...item, quantity } : item));
+  const updateQuantity = (cartItemId: string, quantity: number) => {
+    if (quantity < 1) return removeFromCart(cartItemId);
+    setItems(prev => prev.map(item => {
+      const itemKey = item.selectedVariantId ? `${item.id}-${item.selectedVariantId}` : `${item.id}`;
+      return itemKey === cartItemId ? { ...item, quantity } : item;
+    }));
+  };
+
+  const clearCart = () => {
+    setItems([]);
   };
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
-    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen, total }}>
+    <CartContext.Provider value={{ items, addToCart, removeFromCart, updateQuantity, isCartOpen, setIsCartOpen, total, clearCart }}>
       {children}
     </CartContext.Provider>
   );

@@ -1,2 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Oranienbaum&display=swap');
 @import "tailwindcss";
 @custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-oranienbaum: "Oranienbaum", serif;
+  --font-arsenica: "Arsenica", "Times New Roman", serif;
+  --font-adventor: "Tex Gyre Adventor", "Century Gothic", "Montserrat", sans-serif;
+  --color-brand-bg: #660010;
+  --color-brand-light: #fdfbfb;
+  --color-brand-muted: rgba(255, 255, 255, 0.6);
+  --color-brand-border: rgba(255, 255, 255, 0.15);
+  --color-brand-hover: rgba(255, 255, 255, 0.05);
+}
+
+body {
+  background-color: var(--color-brand-bg);
+  color: var(--color-brand-light);
+}

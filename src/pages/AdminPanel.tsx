@@ -27,6 +27,13 @@ export default function AdminPanel() {
   const [cmsPages, setCmsPages] = useState<CMSPage[]>([]);
   const [homeConfig, setHomeConfig] = useState<HomeConfig | null>(null);
 
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    orders: { page: 1, total: 0, limit: 10 },
+    customers: { page: 1, total: 0, limit: 10 },
+    reviews: { page: 1, total: 0, limit: 10 }
+  });
+
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -41,7 +48,7 @@ export default function AdminPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData)
       });
-      if (!res.ok) throw new Error('Invalid credentials');
+      if (!res.ok) throw new Error('Неверные учетные данные');
       const data = await res.json();
       setToken(data.token);
       localStorage.setItem('adminToken', data.token);
@@ -68,7 +75,7 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const res = await fetch('/api/products');
-      if (!res.ok) throw new Error('Failed to fetch products');
+      if (!res.ok) throw new Error('Не удалось загрузить товары');
       const data = await res.json();
       setProducts(data);
     } catch (err: any) {
@@ -80,52 +87,89 @@ export default function AdminPanel() {
 
   const fetchDashboardData = async () => {
     if (!token) return;
+    setLoading(true);
     try {
       const res = await fetch('/api/admin/dashboard', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) setDashboardData(await res.json());
     } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (page = pagination.orders.page) => {
     if (!token) return;
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/orders', {
+      const res = await fetch(`/api/admin/orders?page=${page}&limit=${pagination.orders.limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) setOrders(await res.json());
+      if (res.ok) {
+        const result = await res.json();
+        setOrders(result.data);
+        setPagination(prev => ({
+          ...prev,
+          orders: { ...prev.orders, page: result.page, total: result.total }
+        }));
+      }
     } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = pagination.customers.page) => {
     if (!token) return;
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/users', {
+      const res = await fetch(`/api/admin/users?page=${page}&limit=${pagination.customers.limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) setUsers(await res.json());
+      if (res.ok) {
+        const result = await res.json();
+        setUsers(result.data);
+        setPagination(prev => ({
+          ...prev,
+          customers: { ...prev.customers, page: result.page, total: result.total }
+        }));
+      }
     } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (page = pagination.reviews.page) => {
     if (!token) return;
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/reviews', {
+      const res = await fetch(`/api/admin/reviews?page=${page}&limit=${pagination.reviews.limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (res.ok) setReviews(await res.json());
+      if (res.ok) {
+        const result = await res.json();
+        setReviews(result.data);
+        setPagination(prev => ({
+          ...prev,
+          reviews: { ...prev.reviews, page: result.page, total: result.total }
+        }));
+      }
     } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
-  const fetchCMSPages = async () => {
+  const fetchCMSData = async () => {
     if (!token) return;
+    setLoading(true);
     try {
-      const res = await fetch('/api/admin/cms', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) setCmsPages(await res.json());
-    } catch (err) { console.error(err); }
+      const [cmsRes, homeRes] = await Promise.all([
+        fetch('/api/admin/cms', { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('/api/settings/home')
+      ]);
+      
+      if (cmsRes.ok) setCmsPages(await cmsRes.json());
+      if (homeRes.ok) setHomeConfig(await homeRes.json());
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -136,60 +180,47 @@ export default function AdminPanel() {
         case 'orders': fetchOrders(); break;
         case 'customers': fetchUsers(); break;
         case 'reviews': fetchReviews(); break;
-        case 'cms': fetchCMSPages(); fetchHomeConfig(); break;
+        case 'cms': fetchCMSData(); break;
       }
     }
   }, [token, activeTab]);
-
-  const fetchHomeConfig = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const res = await fetch('/api/settings/home');
-      if (!res.ok) throw new Error('Failed to fetch home config');
-      const data = await res.json();
-      setHomeConfig(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   if (!token) {
     return (
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md mx-auto mt-24 bg-white dark:bg-stone-900 p-8 rounded-3xl shadow-sm border border-stone-100 dark:border-stone-800 mx-4 sm:mx-auto"
+        className="max-w-md mx-auto mt-24 bg-white/5 p-8 rounded-3xl shadow-sm border border-brand-border mx-4 sm:mx-auto"
       >
         <div className="text-center mb-8">
-          <div className="w-12 h-12 bg-stone-100 dark:bg-stone-800 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-6 h-6 text-stone-600 dark:text-stone-400" />
+          <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock className="w-6 h-6 text-brand-light" />
           </div>
-          <h1 className="text-2xl font-serif text-stone-900 dark:text-stone-100">Admin Access</h1>
-          <p className="text-stone-500 dark:text-stone-400 text-sm mt-2">Please sign in to manage the store.</p>
+          <h1 className="text-2xl font-serif text-brand-light">Доступ администратора</h1>
+          <p className="text-brand-muted text-sm mt-2">Пожалуйста, войдите для управления магазином.</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 ml-1">Username</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">Имя пользователя</label>
             <input 
               type="text" 
               required 
+              minLength={3}
               value={loginData.username} 
               onChange={e => setLoginData({...loginData, username: e.target.value})}
-              className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent outline-none text-stone-900 dark:text-stone-100" 
+              className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:ring-2 focus:ring-white focus:border-transparent outline-none text-brand-light" 
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 ml-1">Password</label>
+            <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">Пароль</label>
             <input 
               type="password" 
               required 
+              minLength={6}
               value={loginData.password} 
               onChange={e => setLoginData({...loginData, password: e.target.value})}
-              className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent outline-none text-stone-900 dark:text-stone-100" 
+              className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:ring-2 focus:ring-white focus:border-transparent outline-none text-brand-light" 
             />
           </div>
 
@@ -200,9 +231,9 @@ export default function AdminPanel() {
           <button 
             type="submit" 
             disabled={isLoggingIn}
-            className="w-full py-4 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-xl font-medium hover:bg-stone-800 dark:hover:bg-stone-200 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium hover:bg-white/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
           >
-            {isLoggingIn ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            {isLoggingIn ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Войти'}
           </button>
         </form>
       </motion.div>
@@ -215,10 +246,10 @@ export default function AdminPanel() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-5xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 py-12"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 dark:border-stone-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
         <div>
-          <h1 className="text-3xl font-serif text-stone-900 dark:text-stone-100">Admin Dashboard</h1>
-          <p className="text-stone-500 dark:text-stone-400 mt-1">Manage your store and view analytics.</p>
+          <h1 className="text-3xl font-serif text-brand-light">Панель управления</h1>
+          <p className="text-brand-muted mt-1">Управление магазином и аналитика.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -229,39 +260,39 @@ export default function AdminPanel() {
                 case 'orders': fetchOrders(); break;
                 case 'customers': fetchUsers(); break;
                 case 'reviews': fetchReviews(); break;
-                case 'cms': fetchCMSPages(); fetchHomeConfig(); break;
+                case 'cms': fetchCMSData(); break;
               }
             }}
-            className="p-2 text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 rounded-lg transition-colors"
-            title="Refresh"
+            className="p-2 text-brand-muted hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            title="Обновить"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
           </button>
           
           <button 
             onClick={handleLogout}
-            className="p-2 text-stone-500 dark:text-stone-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            title="Sign Out"
+            className="p-2 text-brand-muted hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
+            title="Выйти"
           >
             <LogOut className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-stone-200 dark:border-stone-800">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar border-b border-brand-border">
         {[
-          { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-          { id: 'orders', label: 'Orders', icon: ShoppingBag },
-          { id: 'inventory', label: 'Inventory', icon: Package },
-          { id: 'customers', label: 'Customers', icon: Users },
-          { id: 'reviews', label: 'Reviews', icon: MessageSquare },
-          { id: 'cms', label: 'CMS', icon: FileText },
-          { id: 'reports', label: 'Reports', icon: BarChart3 },
+          { id: 'dashboard', label: 'Сводка', icon: LayoutDashboard },
+          { id: 'orders', label: 'Заказы', icon: ShoppingBag },
+          { id: 'inventory', label: 'Товары', icon: Package },
+          { id: 'customers', label: 'Клиенты', icon: Users },
+          { id: 'reviews', label: 'Отзывы', icon: MessageSquare },
+          { id: 'cms', label: 'Контент', icon: FileText },
+          { id: 'reports', label: 'Отчеты', icon: BarChart3 },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`pb-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-stone-900 dark:border-stone-100 text-stone-900 dark:text-stone-100' : 'border-transparent text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300'}`}
+            className={`pb-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-white text-brand-light' : 'border-transparent text-brand-muted hover:text-white'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -285,7 +316,16 @@ export default function AdminPanel() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'dashboard' && <DashboardView data={dashboardData} loading={loading} />}
-          {activeTab === 'orders' && <OrdersView orders={orders} token={token!} onUpdate={fetchOrders} />}
+          {activeTab === 'orders' && (
+            <OrdersView 
+              orders={orders} 
+              token={token!} 
+              onUpdate={fetchOrders} 
+              loading={loading}
+              pagination={pagination.orders}
+              onPageChange={(page) => fetchOrders(page)}
+            />
+          )}
           {activeTab === 'inventory' && (
             <InventoryView 
               products={products} 
@@ -295,9 +335,25 @@ export default function AdminPanel() {
               onAuthError={handleLogout} 
             />
           )}
-          {activeTab === 'customers' && <CustomersView users={users} loading={loading} />}
-          {activeTab === 'reviews' && <ReviewsView reviews={reviews} token={token!} onUpdate={fetchReviews} />}
-          {activeTab === 'cms' && <CMSView pages={cmsPages} homeConfig={homeConfig} onUpdateHome={fetchHomeConfig} onUpdatePage={fetchCMSPages} token={token!} />}
+          {activeTab === 'customers' && (
+            <CustomersView 
+              users={users} 
+              loading={loading}
+              pagination={pagination.customers}
+              onPageChange={(page) => fetchUsers(page)}
+            />
+          )}
+          {activeTab === 'reviews' && (
+            <ReviewsView 
+              reviews={reviews} 
+              token={token!} 
+              onUpdate={fetchReviews} 
+              loading={loading}
+              pagination={pagination.reviews}
+              onPageChange={(page) => fetchReviews(page)}
+            />
+          )}
+          {activeTab === 'cms' && <CMSView pages={cmsPages} homeConfig={homeConfig} onUpdateHome={fetchCMSData} onUpdatePage={fetchCMSData} token={token!} loading={loading} />}
           {activeTab === 'reports' && <ReportsView token={token!} />}
         </motion.div>
       </AnimatePresence>

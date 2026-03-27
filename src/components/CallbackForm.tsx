@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { useLanguage } from './LanguageProvider';
 
 export default function CallbackForm() {
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +36,8 @@ export default function CallbackForm() {
       <div className="flex flex-col items-center justify-center py-12 text-center text-emerald-600 dark:text-emerald-400 space-y-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/50">
         <CheckCircle2 className="w-12 h-12" />
         <div>
-          <h3 className="font-serif text-xl mb-1 text-emerald-800 dark:text-emerald-300">Request Received</h3>
-          <p className="text-emerald-600/80 dark:text-emerald-400/80 text-sm">Our manager will contact you shortly.</p>
+          <h3 className="font-serif text-xl mb-1 text-emerald-800 dark:text-emerald-300">{t('requestReceived')}</h3>
+          <p className="text-emerald-600/80 dark:text-emerald-400/80 text-sm">{t('managerContact')}</p>
         </div>
       </div>
     );
@@ -44,24 +46,28 @@ export default function CallbackForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="space-y-1">
-        <label htmlFor="name" className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 ml-1">Name</label>
+        <label htmlFor="name" className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">{t('name')}</label>
         <input
           type="text"
           id="name"
           required
+          minLength={2}
+          maxLength={100}
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent transition-all placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-stone-100"
-          placeholder="Jane Doe"
+          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
+          placeholder={t('placeholderName')}
         />
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="phone" className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 ml-1">Phone Number</label>
+        <label htmlFor="phone" className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">{t('phoneNumber')}</label>
         <input
           type="tel"
           id="phone"
           required
+          pattern="^(\+?[0-9\s\-\(\)]{7,20})$"
+          title="Введите корректный номер телефона"
           value={formData.phone}
           onChange={(e) => {
             const val = e.target.value;
@@ -69,39 +75,41 @@ export default function CallbackForm() {
               setFormData({ ...formData, phone: val });
             }
           }}
-          className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent transition-all placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-stone-100"
-          placeholder="+1 (555) 000-0000"
+          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
+          placeholder={t('placeholderPhone')}
         />
       </div>
 
       <div className="space-y-1">
-        <label htmlFor="message" className="text-xs font-medium uppercase tracking-wider text-stone-500 dark:text-stone-400 ml-1">Message (Optional)</label>
+        <label htmlFor="message" className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">{t('messageOptional')}</label>
         <textarea
           id="message"
           rows={3}
+          minLength={formData.message ? 5 : 0}
+          maxLength={1000}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className="w-full px-4 py-3 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-stone-900 dark:focus:ring-stone-100 focus:border-transparent transition-all resize-none placeholder:text-stone-400 dark:placeholder:text-stone-500 text-stone-900 dark:text-stone-100"
-          placeholder="I'm looking for a woody fragrance..."
+          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all resize-none placeholder:text-brand-muted text-brand-light"
+          placeholder={t('placeholderMessage')}
         />
       </div>
 
       {status === 'error' && (
-        <p className="text-red-500 dark:text-red-400 text-sm text-center py-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-          Failed to send request. Please try again.
+        <p className="text-red-400 text-sm text-center py-2 bg-red-900/20 rounded-lg">
+          {t('failedToSend')}
         </p>
       )}
 
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="w-full py-4 bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 rounded-xl font-medium tracking-wide hover:bg-stone-800 dark:hover:bg-stone-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-900 dark:focus:ring-offset-stone-900 dark:focus:ring-stone-100 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium tracking-wide hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-brand-bg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {status === 'loading' ? (
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
           <>
-            <span>Request Callback</span>
+            <span>{t('requestCallback')}</span>
             <Send className="w-4 h-4" />
           </>
         )}

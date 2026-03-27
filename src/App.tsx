@@ -19,6 +19,8 @@ import Forbidden from './pages/Forbidden';
 import { ThemeProvider } from './components/ThemeProvider';
 import { LanguageProvider } from './components/LanguageProvider';
 import { CartProvider } from './components/CartProvider';
+import { WishlistProvider } from './components/WishlistProvider';
+import Wishlist from './pages/Wishlist';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -39,24 +41,27 @@ export default function App() {
     <HelmetProvider>
       <ThemeProvider>
         <LanguageProvider>
-          <CartProvider>
-            <BrowserRouter>
-              <ScrollToTop />
-              <Routes>
-                <Route path="/" element={<Layout />}>
-                  <Route index element={<Home />} />
-                  <Route path="catalog" element={<Storefront />} />
-                  <Route path="product/:id" element={<ProductDetails />} />
-                  <Route path="contacts" element={<Contacts />} />
-                  <Route path="reviews" element={<Reviews />} />
-                  <Route path="about" element={<About />} />
-                  <Route path="admin" element={<AdminPanel />} />
-                  <Route path="forbidden" element={<Forbidden />} />
-                  <Route path="*" element={<NotFound />} />
-                </Route>
-              </Routes>
-            </BrowserRouter>
-          </CartProvider>
+          <WishlistProvider>
+            <CartProvider>
+              <BrowserRouter>
+                <ScrollToTop />
+                <Routes>
+                  <Route path="/" element={<Layout />}>
+                    <Route index element={<Home />} />
+                    <Route path="catalog" element={<Storefront />} />
+                    <Route path="catalog/:slug" element={<ProductDetails />} />
+                    <Route path="contacts" element={<Contacts />} />
+                    <Route path="reviews" element={<Reviews />} />
+                    <Route path="about" element={<About />} />
+                    <Route path="wishlist" element={<Wishlist />} />
+                    <Route path="admin" element={<AdminPanel />} />
+                    <Route path="forbidden" element={<Forbidden />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Route>
+                </Routes>
+              </BrowserRouter>
+            </CartProvider>
+          </WishlistProvider>
         </LanguageProvider>
       </ThemeProvider>
     </HelmetProvider>

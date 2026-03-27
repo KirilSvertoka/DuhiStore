@@ -12,7 +12,10 @@ export default function Reviews() {
 
   useEffect(() => {
     fetch('/api/reviews')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`Reviews fetch failed: ${res.status}`);
+        return res.json();
+      })
       .then(data => {
         setReviews(data);
         setLoading(false);
@@ -31,13 +34,14 @@ export default function Reviews() {
     >
       <Helmet>
         <title>{language === 'ru' ? 'Отзывы' : 'Водгукі'} | Scentique</title>
-        <meta name="description" content={language === 'ru' ? 'Отзывы наших клиентов.' : 'Водгукі нашых кліентаў.'} />
+        <meta name="description" content={language === 'ru' ? 'Что говорят наши клиенты о Scentique. Реальные отзывы о качестве парфюмерии и сервисе.' : 'Што кажуць нашы кліенты пра Scentique. Рэальныя водгукі аб якасці парфумерыі і сэрвісе.'} />
+        <link rel="canonical" href={`${window.location.origin}/reviews`} />
       </Helmet>
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-serif text-stone-900 dark:text-stone-100">
+        <h1 className="text-4xl font-serif text-brand-light">
           {language === 'ru' ? 'Отзывы клиентов' : 'Водгукі кліентаў'}
         </h1>
-        <p className="text-stone-500 dark:text-stone-400">
+        <p className="text-brand-muted">
           {language === 'ru' ? 'Прочтите, что говорят наши клиенты о своих ароматах.' : 'Прачытайце, што кажуць нашы кліенты пра свае водары.'}
         </p>
       </div>
@@ -45,7 +49,7 @@ export default function Reviews() {
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-white dark:bg-stone-900 p-8 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm h-48 animate-pulse" />
+            <div key={i} className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm h-48 animate-pulse" />
           ))}
         </div>
       ) : reviews.length > 0 ? (
@@ -56,24 +60,24 @@ export default function Reviews() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.1 }}
-              className="bg-white dark:bg-stone-900 p-8 rounded-3xl border border-stone-100 dark:border-stone-800 shadow-sm flex flex-col h-full"
+              className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm flex flex-col h-full"
             >
               <div className="flex items-center gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-stone-800 dark:text-stone-200 fill-stone-800 dark:fill-stone-200' : 'text-stone-200 dark:text-stone-800'}`} />
+                  <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'text-amber-400 fill-amber-400' : 'text-brand-border'}`} />
                 ))}
               </div>
-              <p className="text-stone-600 dark:text-stone-400 italic mb-6 flex-1">"{review.comment}"</p>
-              <div className="flex items-center justify-between border-t border-stone-100 dark:border-stone-800 pt-4 mt-auto">
-                <span className="font-medium text-stone-900 dark:text-stone-100">{review.userName}</span>
-                <span className="text-xs uppercase tracking-wider text-stone-400 dark:text-stone-500">{(review as any).productName}</span>
+              <p className="text-brand-muted italic mb-6 flex-1">"{review.comment}"</p>
+              <div className="flex items-center justify-between border-t border-brand-border pt-4 mt-auto">
+                <span className="font-medium text-brand-light">{review.userName}</span>
+                <span className="text-xs uppercase tracking-wider text-brand-muted">{(review as any).productName}</span>
               </div>
             </motion.div>
           ))}
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-stone-500 dark:text-stone-400 italic">{t('noReviews')}</p>
+          <p className="text-brand-muted italic">{t('noReviews')}</p>
         </div>
       )}
     </motion.div>
