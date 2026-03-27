@@ -36,7 +36,7 @@ export default function Loader() {
             repeatDelay: 0.5
           }}
         >
-          Scentique
+          Arhetip
         </motion.text>
       </motion.svg>
     </div>

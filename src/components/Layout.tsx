@@ -113,7 +113,7 @@ export default function Layout() {
 
               <Link to="/" className="flex items-center gap-2 group">
                 <Droplets className="w-6 h-6 text-brand-light group-hover:text-white transition-colors" />
-                <span className="font-serif text-xl font-medium tracking-tight">Scentique</span>
+                <span className="font-serif text-xl font-medium tracking-tight">Arhetip</span>
               </Link>
             </div>
             
@@ -169,7 +169,7 @@ export default function Layout() {
                   <a href="https://t.me/username" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white transition-colors">
                     <Send className="w-4 h-4" />
                   </a>
-                  <a href="mailto:hello@scentique.com" className="text-brand-muted hover:text-white transition-colors">
+                  <a href="mailto:hello@arhetip.com" className="text-brand-muted hover:text-white transition-colors">
                     <Mail className="w-4 h-4" />
                   </a>
                 </div>
@@ -297,7 +297,7 @@ export default function Layout() {
                   <a href="https://t.me/username" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
                     <Send className="w-6 h-6" />
                   </a>
-                  <a href="mailto:hello@scentique.com" className="text-brand-muted hover:text-white">
+                  <a href="mailto:hello@arhetip.com" className="text-brand-muted hover:text-white">
                     <Mail className="w-6 h-6" />
                   </a>
                 </div>
@@ -316,7 +316,7 @@ export default function Layout() {
       <footer className="border-t border-brand-border mt-24 transition-colors duration-300">
         <Newsletter />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center text-brand-muted text-sm">
-          <p>&copy; {new Date().getFullYear()} Scentique. {t('allRightsReserved')}</p>
+          <p>&copy; {new Date().getFullYear()} Arhetip. {t('allRightsReserved')}</p>
         </div>
       </footer>
         </div>

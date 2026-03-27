@@ -160,9 +160,9 @@ export default function Storefront() {
       className="pb-24 relative"
     >
       <Helmet>
-        <title>Каталог нишевой парфюмерии | Scentique</title>
+        <title>Каталог нишевой парфюмерии | Arhetip</title>
         <meta name="description" content="Широкий выбор селективных ароматов. Фильтруйте по брендам, семействам и полу. Найдите свой идеальный парфюм в нашем каталоге." />
-        <meta property="og:title" content="Каталог Scentique | Эксклюзивные ароматы" />
+        <meta property="og:title" content="Каталог Arhetip | Эксклюзивные ароматы" />
         <meta property="og:description" content="Исследуйте нашу коллекцию нишевой парфюмерии. Лучшие бренды и уникальные композиции." />
         <meta property="og:type" content="website" />
         <link rel="canonical" href={`${window.location.origin}/catalog`} />

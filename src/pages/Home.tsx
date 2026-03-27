@@ -68,9 +68,9 @@ export default function Home() {
       className="w-full"
     >
       <Helmet>
-        <title>Scentique | Элитная нишевая парфюмерия в Беларуси</title>
-        <meta name="description" content="Откройте для себя коллекцию эксклюзивных нишевых ароматов в Scentique. Минимализм, качество и уникальные композиции. Доставка по всей Беларуси." />
-        <meta property="og:title" content="Scentique | Элитная нишевая парфюмерия" />
+        <title>Arhetip | Элитная нишевая парфюмерия в Беларуси</title>
+        <meta name="description" content="Откройте для себя коллекцию эксклюзивных нишевых ароматов в Arhetip. Минимализм, качество и уникальные композиции. Доставка по всей Беларуси." />
+        <meta property="og:title" content="Arhetip | Элитная нишевая парфюмерия" />
         <meta property="og:description" content="Эксклюзивные ароматы для ценителей. Найдите свой идеальный парфюм в нашей коллекции." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={window.location.origin} />
@@ -88,8 +88,8 @@ export default function Home() {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4"
           >
-            <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>Архетип:</span>
-            <span style={{ fontFamily: 'var(--font-arsenica)' }}>Парфюмерная крама</span>
+            <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>{language === 'be' ? 'Архетып:' : 'Архетип:'}</span>
+            <span style={{ fontFamily: 'var(--font-arsenica)' }}>{language === 'be' ? 'Парфумерная крама' : 'Парфюмерный магазин'}</span>
           </motion.h1>
           <motion.p 
             initial={{ y: 30, opacity: 0 }}
@@ -98,7 +98,7 @@ export default function Home() {
             className="text-lg md:text-xl text-white/80 font-light max-w-2xl mb-10"
             style={{ fontFamily: 'var(--font-adventor)' }}
           >
-            Множественность архетипов. Множественность ароматов
+            {language === 'be' ? 'Множнасць архетыпаў. Множнасць водараў' : 'Множественность архетипов. Множественность ароматов'}
           </motion.p>
           <motion.div
             initial={{ y: 30, opacity: 0 }}
@@ -141,7 +141,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.6, delay: pIdx * 0.1 }}
-                  className="h-[50vh] rounded-2xl overflow-hidden"
+                  className="rounded-2xl overflow-hidden"
                 >
                   <ProductCard product={product} />
                 </motion.div>
@@ -178,7 +178,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.6, delay: pIdx * 0.1 }}
-                  className="h-[50vh] rounded-2xl overflow-hidden"
+                  className="rounded-2xl overflow-hidden"
                 >
                   <ProductCard product={product} />
                 </motion.div>
@@ -215,7 +215,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.6, delay: pIdx * 0.1 }}
-                  className="h-[50vh] rounded-2xl overflow-hidden"
+                  className="rounded-2xl overflow-hidden"
                 >
                   <ProductCard product={product} />
                 </motion.div>
@@ -252,7 +252,7 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.6, delay: pIdx * 0.1 }}
-                  className="h-[50vh] rounded-2xl overflow-hidden"
+                  className="rounded-2xl overflow-hidden"
                 >
                   <ProductCard product={product} />
                 </motion.div>

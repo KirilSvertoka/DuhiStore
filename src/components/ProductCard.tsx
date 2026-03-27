@@ -51,7 +51,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div ref={ref} className="block w-full h-full group overflow-hidden bg-brand-bg relative">
-      <div className="relative w-full h-[60vh] md:h-[70vh] lg:h-[80vh] overflow-hidden">
+      <div className="relative w-full aspect-[3/4] overflow-hidden">
         {/* Wishlist Button - Outside Link to be valid HTML */}
         <button
           onClick={handleWishlistToggle}

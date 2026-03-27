@@ -13,7 +13,7 @@ export default function Contacts() {
       className="max-w-3xl mx-auto space-y-12 px-4 sm:px-6 lg:px-8 py-12"
     >
       <Helmet>
-        <title>{language === 'ru' ? 'Контакты' : 'Кантакты'} | Scentique</title>
+        <title>{language === 'ru' ? 'Контакты' : 'Кантакты'} | Arhetip</title>
         <meta name="description" content={language === 'ru' ? 'Свяжитесь с нами для консультации по выбору аромата.' : 'Звяжыцеся з намі для кансультацыі па выбары водару.'} />
         <link rel="canonical" href={`${window.location.origin}/contacts`} />
       </Helmet>
@@ -32,7 +32,7 @@ export default function Contacts() {
             <Mail className="w-5 h-5 text-brand-light" />
           </div>
           <h3 className="font-medium text-brand-light mb-1">Email</h3>
-          <p className="text-sm text-brand-muted">hello@scentique.com</p>
+          <p className="text-sm text-brand-muted">hello@arhetip.com</p>
         </div>
 
         <div className="flex flex-col items-center text-center p-6 bg-white/5 rounded-2xl border border-brand-border shadow-sm">

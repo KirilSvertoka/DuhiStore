@@ -122,7 +122,7 @@ export default function ProductDetails() {
     return (
       <div className="text-center py-24">
         <Helmet>
-          <title>{t('notFound')} | Scentique</title>
+          <title>{t('notFound')} | Arhetip</title>
         </Helmet>
         <h2 className="text-2xl font-serif text-brand-light mb-4">{t('notFound')}</h2>
         <Link to="/catalog" className="text-brand-muted hover:text-white flex items-center justify-center gap-2">
@@ -159,7 +159,7 @@ export default function ProductDetails() {
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
     >
       <Helmet>
-        <title>{`${product.name} — ${product.brand} | Scentique`}</title>
+        <title>{`${product.name} — ${product.brand} | Arhetip`}</title>
         <meta name="description" content={product.description.substring(0, 160)} />
         <meta property="og:title" content={`${product.name} — ${product.brand}`} />
         <meta property="og:description" content={product.description.substring(0, 160)} />

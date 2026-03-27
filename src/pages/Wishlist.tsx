@@ -53,7 +53,7 @@ export default function Wishlist() {
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-brand-bg">
       <Helmet>
-        <title>{t('wishlist')} | Scentique</title>
+        <title>{t('wishlist')} | Arhetip</title>
       </Helmet>
 
       <div className="max-w-7xl mx-auto">
