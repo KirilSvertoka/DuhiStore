@@ -75,15 +75,15 @@ export default function DashboardView({ data, loading }: DashboardViewProps) {
               <AreaChart data={data.salesTrend && data.salesTrend.length > 0 ? data.salesTrend : [{name: 'Нет данных', sales: 0}]}>
                 <defs>
                   <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#fdfbfb" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#fdfbfb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="var(--color-brand-accent)" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="var(--color-brand-accent)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'rgba(255,255,255,0.5)'}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'rgba(255,255,255,0.5)'}} />
-                <Tooltip contentStyle={{ backgroundColor: '#660010', borderColor: 'rgba(255,255,255,0.1)', color: '#fdfbfb' }} itemStyle={{ color: '#fdfbfb' }} />
-                <Area type="monotone" dataKey="sales" stroke="#fdfbfb" fillOpacity={1} fill="url(#colorSales)" />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--color-brand-bg)', borderColor: 'rgba(255,255,255,0.1)', color: '#fdfbfb' }} itemStyle={{ color: 'var(--color-brand-accent)' }} />
+                <Area type="monotone" dataKey="sales" stroke="var(--color-brand-accent)" fillOpacity={1} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>

@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Review } from '../../types';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, MessageSquareReply } from 'lucide-react';
 import Pagination from './Pagination';
 
 interface ReviewsViewProps {
@@ -13,6 +13,9 @@ interface ReviewsViewProps {
 }
 
 export default function ReviewsView({ reviews, token, onUpdate, loading, pagination, onPageChange }: ReviewsViewProps) {
+  const [replyingTo, setReplyingTo] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState('');
+
   const updateStatus = async (id: number, status: string) => {
     try {
       const res = await fetch(`/api/admin/reviews/${id}`, {
@@ -21,6 +24,21 @@ export default function ReviewsView({ reviews, token, onUpdate, loading, paginat
         body: JSON.stringify({ status })
       });
       if (res.ok) onUpdate();
+    } catch (err) { console.error(err); }
+  };
+
+  const submitReply = async (id: number) => {
+    try {
+      const res = await fetch(`/api/admin/reviews/${id}/reply`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ adminReply: replyText })
+      });
+      if (res.ok) {
+        setReplyingTo(null);
+        setReplyText('');
+        onUpdate();
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -56,16 +74,47 @@ export default function ReviewsView({ reviews, token, onUpdate, loading, paginat
             ))}
           </div>
           <p className="text-sm text-brand-light italic">"{review.comment}"</p>
-          <div className="mt-4 flex justify-between items-center">
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-              review.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400' :
-              review.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-              'bg-amber-500/20 text-amber-400'
-            }`}>
-              {review.status === 'Approved' ? 'Одобрен' : review.status === 'Rejected' ? 'Отклонен' : 'Ожидает'}
-            </span>
-            <span className="text-xs text-brand-muted">{new Date(review.createdAt).toLocaleDateString()}</span>
-          </div>
+          
+          {review.adminReply && (
+            <div className="mt-4 p-4 bg-brand-light/5 border border-brand-light/20 rounded-xl">
+              <p className="text-xs font-bold uppercase text-brand-light mb-1">Ответ магазина:</p>
+              <p className="text-sm text-brand-light">{review.adminReply}</p>
+            </div>
+          )}
+
+          {replyingTo === review.id ? (
+            <div className="mt-4 space-y-2">
+              <textarea
+                value={replyText}
+                onChange={(e) => setReplyText(e.target.value)}
+                className="w-full px-4 py-2 bg-white/5 border border-brand-border rounded-xl text-sm text-brand-light placeholder:text-brand-muted resize-none"
+                placeholder="Напишите ответ..."
+                rows={3}
+              />
+              <div className="flex justify-end gap-2">
+                <button onClick={() => setReplyingTo(null)} className="px-4 py-1.5 text-xs border border-brand-border rounded-lg text-brand-light hover:bg-white/5">Отмена</button>
+                <button onClick={() => submitReply(review.id)} className="px-4 py-1.5 text-xs bg-brand-accent text-white rounded-lg hover:bg-brand-accent-hover">Отправить</button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                  review.status === 'Approved' ? 'bg-emerald-500/20 text-emerald-400' :
+                  review.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                  'bg-amber-500/20 text-amber-400'
+                }`}>
+                  {review.status === 'Approved' ? 'Одобрен' : review.status === 'Rejected' ? 'Отклонен' : 'Ожидает'}
+                </span>
+                {!review.adminReply && (
+                  <button onClick={() => { setReplyingTo(review.id); setReplyText(''); }} className="text-xs text-brand-muted hover:text-brand-light flex items-center gap-1">
+                    <MessageSquareReply className="w-3 h-3" /> Ответить
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-brand-muted">{new Date(review.createdAt).toLocaleDateString()}</span>
+            </div>
+          )}
         </div>
       ))}
       <Pagination 

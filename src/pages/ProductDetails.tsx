@@ -271,7 +271,7 @@ export default function ProductDetails() {
 
           <button 
             onClick={() => addToCart(product, selectedVariantId)}
-            className="w-full md:w-auto px-12 py-4 mb-12 bg-white text-brand-bg rounded-full font-medium uppercase tracking-widest hover:bg-white/90 transition-colors"
+            className="w-full md:w-auto px-12 py-4 mb-12 bg-brand-accent text-white rounded-full font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors"
           >
             {t('addToCart')}
           </button>
@@ -398,7 +398,7 @@ export default function ProductDetails() {
                 <button 
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium uppercase tracking-widest text-xs hover:bg-white/90 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest text-xs hover:bg-brand-accent-hover transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

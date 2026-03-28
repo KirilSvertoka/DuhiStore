@@ -33,7 +33,7 @@ export default function ReportsView({ token }: ReportsViewProps) {
             </button>
             <button 
               onClick={() => exportData(report.type, 'csv')}
-              className="flex-1 py-3 bg-brand-light text-brand-bg rounded-xl text-sm font-medium hover:bg-white transition-colors flex items-center justify-center gap-2"
+              className="flex-1 py-3 bg-brand-accent text-white rounded-xl text-sm font-medium hover:bg-brand-accent-hover transition-colors flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" /> CSV
             </button>

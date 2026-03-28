@@ -136,7 +136,7 @@ export default function CartDrawer() {
                   <p className="text-brand-muted">{t('orderSuccessDesc')}</p>
                   <button 
                     onClick={closeDrawer}
-                    className="mt-8 px-8 py-3 bg-white text-brand-bg rounded-xl font-medium"
+                    className="mt-8 px-8 py-3 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors"
                   >
                     {t('backToCatalog')}
                   </button>
@@ -187,7 +187,7 @@ export default function CartDrawer() {
                     <button 
                       type="submit"
                       disabled={isSubmitting}
-                      className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium uppercase tracking-widest hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Оформить заказ'}
                     </button>
@@ -242,7 +242,7 @@ export default function CartDrawer() {
                 </div>
                 <button 
                   onClick={() => setIsCheckingOut(true)}
-                  className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium uppercase tracking-widest hover:bg-white/90 transition-colors"
+                  className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors"
                 >
                   {t('checkout')}
                 </button>

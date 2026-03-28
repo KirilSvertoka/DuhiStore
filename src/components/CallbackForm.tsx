@@ -103,7 +103,7 @@ export default function CallbackForm() {
       <button
         type="submit"
         disabled={status === 'loading'}
-        className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium tracking-wide hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white focus:ring-offset-brand-bg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+        className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium tracking-wide hover:bg-brand-accent-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-accent focus:ring-offset-brand-bg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {status === 'loading' ? (
           <Loader2 className="w-5 h-5 animate-spin" />

@@ -197,7 +197,7 @@ export default function Storefront() {
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                 isFilterOpen || activeFiltersCount > 0
-                  ? 'bg-white text-brand-bg border-white'
+                  ? 'bg-brand-accent text-white border-brand-accent'
                   : 'bg-white/5 text-brand-muted border-brand-border hover:border-white/40'
               }`}
             >
@@ -344,7 +344,7 @@ export default function Storefront() {
                           onClick={() => toggleFamily(family.id)}
                           className={`px-3 py-1.5 rounded-full text-xs font-medium uppercase tracking-wider transition-all border ${
                             selectedFamilies.includes(family.id)
-                              ? 'bg-white text-brand-bg border-white'
+                              ? 'bg-brand-accent text-white border-brand-accent'
                               : 'bg-transparent text-brand-muted border-brand-border hover:border-white/40'
                           }`}
                         >
@@ -364,7 +364,7 @@ export default function Storefront() {
                     </button>
                     <button
                       onClick={() => setIsFilterOpen(false)}
-                      className="px-6 py-2 bg-white text-brand-bg rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                      className="px-6 py-2 bg-brand-accent text-white rounded-lg text-sm font-medium hover:bg-brand-accent-hover transition-opacity"
                     >
                       {t('apply')}
                     </button>
@@ -419,7 +419,7 @@ export default function Storefront() {
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 1, duration: 0.3 }}
         onClick={scrollToCallback}
-        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 p-4 bg-white text-brand-bg rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-50 p-4 bg-brand-accent text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all"
         aria-label="Contact us"
       >
         <MessageCircle className="w-6 h-6" />

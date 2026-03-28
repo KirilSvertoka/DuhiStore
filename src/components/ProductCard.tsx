@@ -79,15 +79,15 @@ export default function ProductCard({ product }: ProductCardProps) {
           />
           
           {/* Dark overlay on hover */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 group-hover:bg-black/80 transition-colors duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-70 group-hover:opacity-100 transition-opacity duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]" />
 
           {/* Content */}
-          <div className="absolute inset-x-0 bottom-0 p-8 md:p-12 flex flex-col justify-end text-white z-10 pointer-events-none">
-            <div className="transform transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-16 group-hover:translate-y-0">
-              <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-white/80 mb-2 drop-shadow-sm">{product.brand}</p>
-              <div className="flex justify-between items-end mb-4 gap-4">
-                <h3 className="font-serif text-3xl md:text-4xl leading-tight drop-shadow-md">{product.name}</h3>
-                <span className="text-xl md:text-2xl font-light whitespace-nowrap drop-shadow-md">
+          <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 flex flex-col justify-end text-white z-10 pointer-events-none">
+            <div className="transform transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] translate-y-4 group-hover:translate-y-0">
+              <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-white/90 mb-1" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>{product.brand}</p>
+              <div className="flex justify-between items-end gap-4">
+                <h3 className="font-serif text-2xl md:text-3xl leading-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{product.name}</h3>
+                <span className="text-lg md:text-xl font-light whitespace-nowrap" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                   {product.variants && product.variants.length > 0 
                     ? `${language === 'be' ? 'ад' : 'от'} ${Math.min(...product.variants.map(v => v.price)).toFixed(2)}` 
                     : product.price.toFixed(2)} {t('currency')}
@@ -95,52 +95,56 @@ export default function ProductCard({ product }: ProductCardProps) {
               </div>
               
               {/* Description (hidden by default, appears on hover) */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]">
-                <p className="text-white/80 text-sm md:text-base leading-relaxed line-clamp-3 max-w-md mb-6">
-                  {language === 'be' && product.description_be ? product.description_be : product.description}
-                </p>
-                
-                {/* Add to Cart Section */}
-                <div className="pointer-events-auto flex flex-col items-start gap-4 w-full">
-                  {product.variants && product.variants.length > 0 && (
-                    <div className="flex flex-col gap-3 w-full">
-                      {Object.entries(
-                        product.variants.reduce((acc, variant) => {
-                          const type = getVariantType(variant.size, language);
-                          if (!acc[type]) acc[type] = [];
-                          acc[type].push(variant);
-                          return acc;
-                        }, {} as Record<string, typeof product.variants>)
-                      ).map(([type, variants]) => (
-                        <div key={type} className="space-y-1.5">
-                          <span className="text-[10px] uppercase tracking-widest text-white/60">{type}</span>
-                          <div className="flex flex-wrap gap-2">
-                            {variants.map((variant) => (
-                              <button
-                                key={variant.id}
-                                onClick={(e) => handleVariantSelect(e, variant.id)}
-                                className={`flex items-center justify-center px-3 py-1.5 rounded-lg border transition-colors ${
-                                  selectedVariantId === variant.id
-                                    ? 'bg-white/20 text-white border-white'
-                                    : 'bg-white/5 text-white/80 border-white/20 hover:bg-white/10 hover:border-white/40'
-                                }`}
-                              >
-                                <span className="text-xs font-medium">{variant.size}</span>
-                              </button>
-                            ))}
-                          </div>
+              <div className="grid grid-rows-[0fr] group-hover:grid-rows-[1fr] transition-[grid-template-rows] duration-700 ease-[cubic-bezier(0.25,1,0.5,1)]">
+                <div className="overflow-hidden">
+                  <div className="pt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+                    <p className="text-white/80 text-sm leading-relaxed line-clamp-2 mb-4">
+                      {language === 'be' && product.description_be ? product.description_be : product.description}
+                    </p>
+                    
+                    {/* Add to Cart Section */}
+                    <div className="pointer-events-auto flex flex-col items-start gap-4 w-full">
+                      {product.variants && product.variants.length > 0 && (
+                        <div className="flex flex-col gap-3 w-full max-h-32 overflow-y-auto custom-scrollbar pr-2">
+                          {Object.entries(
+                            product.variants.reduce((acc, variant) => {
+                              const type = getVariantType(variant.size, language);
+                              if (!acc[type]) acc[type] = [];
+                              acc[type].push(variant);
+                              return acc;
+                            }, {} as Record<string, typeof product.variants>)
+                          ).map(([type, variants]) => (
+                            <div key={type} className="space-y-1.5">
+                              <span className="text-[10px] uppercase tracking-widest text-white/80 font-medium">{type}</span>
+                              <div className="flex flex-wrap gap-2">
+                                {variants.map((variant) => (
+                                  <button
+                                    key={variant.id}
+                                    onClick={(e) => handleVariantSelect(e, variant.id)}
+                                    className={`flex items-center justify-center px-3 py-1.5 rounded-lg border transition-colors ${
+                                      selectedVariantId === variant.id
+                                        ? 'bg-brand-accent text-white border-brand-accent'
+                                        : 'bg-black/40 text-white border-white/30 hover:bg-white/20 hover:border-white/60'
+                                    }`}
+                                  >
+                                    <span className="text-xs font-medium">{variant.size}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                      <button
+                        onClick={handleAddToCart}
+                        disabled={product.variants && product.variants.length > 0 && !selectedVariantId}
+                        className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>{t('addToCart')}</span>
+                      </button>
                     </div>
-                  )}
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={product.variants && product.variants.length > 0 && !selectedVariantId}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-black rounded-xl font-medium hover:bg-white/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>{t('addToCart')}</span>
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>

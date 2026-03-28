@@ -59,7 +59,7 @@ export default function Newsletter() {
                 <button
                   type="submit"
                   disabled={status === 'loading'}
-                  className="absolute right-2 top-2 bottom-2 px-6 bg-white text-brand-bg rounded-lg font-medium text-sm uppercase tracking-wider hover:bg-white/90 transition-colors disabled:opacity-70"
+                  className="absolute right-2 top-2 bottom-2 px-6 bg-brand-accent text-white rounded-lg font-medium text-sm uppercase tracking-wider hover:bg-brand-accent-hover transition-colors disabled:opacity-70"
                 >
                   {status === 'loading' ? (
                     <div className="w-4 h-4 border-2 border-brand-bg/30 border-t-brand-bg rounded-full animate-spin" />

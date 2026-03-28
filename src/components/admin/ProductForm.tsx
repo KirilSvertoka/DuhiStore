@@ -117,6 +117,9 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
     scentFamilies_be: initialData?.scentFamilies_be || [],
     tags: initialData?.tags?.join(', ') || '',
     tags_be: initialData?.tags_be?.join(', ') || '',
+    season: initialData?.season?.join(', ') || '',
+    seoTitle: initialData?.seoTitle || '',
+    seoDescription: initialData?.seoDescription || '',
     variants: initialData?.variants || []
   });
 
@@ -213,6 +216,9 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
       baseNotes: parseNotes(formData.baseNotes),
       tags: formData.tags.split(',').map(t => t.trim()).filter(t => t !== ''),
       tags_be: formData.tags_be.split(',').map(t => t.trim()).filter(t => t !== ''),
+      season: formData.season.split(',').map(t => t.trim()).filter(t => t !== ''),
+      seoTitle: formData.seoTitle,
+      seoDescription: formData.seoDescription,
       variants: formData.variants.map(v => ({
         ...v,
         price: typeof v.price === 'string' ? parseFloat(v.price) : v.price,
@@ -415,7 +421,7 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
                   }}
                   className={`px-4 py-1.5 rounded-full text-sm transition-all border ${
                     formData.scentFamilies.includes(family.id)
-                      ? 'bg-brand-light text-brand-bg border-brand-light'
+                      ? 'bg-brand-accent text-white border-brand-accent'
                       : 'bg-transparent text-brand-muted border-brand-border hover:border-brand-light hover:text-brand-light'
                   }`}
                 >
@@ -450,7 +456,7 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
                   }}
                   className={`px-4 py-1.5 rounded-full text-sm transition-all border ${
                     formData.scentFamilies_be.includes(family.id)
-                      ? 'bg-brand-light text-brand-bg border-brand-light'
+                      ? 'bg-brand-accent text-white border-brand-accent'
                       : 'bg-transparent text-brand-muted border-brand-border hover:border-brand-light hover:text-brand-light'
                   }`}
                 >
@@ -458,6 +464,52 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
                 </button>
               ))}
             </div>
+          </div>
+        </div>
+
+        <div className="pt-4">
+          <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1 mb-3 block">Сезонность</label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { id: 'spring', label: 'Весна' },
+              { id: 'summer', label: 'Лето' },
+              { id: 'autumn', label: 'Осень' },
+              { id: 'winter', label: 'Зима' },
+              { id: 'all_season', label: 'Всесезонный' }
+            ].map(season => (
+              <button
+                key={season.id}
+                type="button"
+                onClick={() => {
+                  const newSeasons = formData.season.includes(season.id)
+                    ? formData.season.split(',').map(s => s.trim()).filter(s => s !== season.id).join(', ')
+                    : [...formData.season.split(',').map(s => s.trim()).filter(Boolean), season.id].join(', ');
+                  setFormData({...formData, season: newSeasons});
+                }}
+                className={`px-4 py-1.5 rounded-full text-sm transition-all border ${
+                  formData.season.includes(season.id)
+                    ? 'bg-brand-accent text-white border-brand-accent'
+                    : 'bg-transparent text-brand-muted border-brand-border hover:border-brand-light hover:text-brand-light'
+                }`}
+              >
+                {season.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* SEO */}
+      <div className="bg-white/5 p-6 rounded-3xl border border-brand-border space-y-6">
+        <h3 className="text-lg font-serif text-brand-light">SEO Настройки</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">SEO Title</label>
+            <input type="text" value={formData.seoTitle} onChange={e => setFormData({...formData, seoTitle: e.target.value})} className="w-full px-4 py-2.5 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light placeholder:text-brand-muted" placeholder="Заголовок для поисковиков" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">SEO Description</label>
+            <textarea rows={3} value={formData.seoDescription} onChange={e => setFormData({...formData, seoDescription: e.target.value})} className="w-full px-4 py-3 bg-transparent border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-light outline-none resize-none text-brand-light placeholder:text-brand-muted" placeholder="Описание для поисковиков" />
           </div>
         </div>
       </div>
@@ -512,7 +564,7 @@ export default function ProductForm({ token, initialData, onSuccess, onCancel, o
         <button 
           type="submit" 
           disabled={submitting}
-          className="px-10 py-3 bg-brand-light text-brand-bg rounded-xl font-medium hover:bg-white transition-colors disabled:opacity-70 flex items-center gap-2 shadow-lg shadow-black/10"
+          className="px-10 py-3 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors disabled:opacity-70 flex items-center gap-2 shadow-lg shadow-black/10"
         >
           {submitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           <span>{initialData ? 'Обновить товар' : 'Создать товар'}</span>

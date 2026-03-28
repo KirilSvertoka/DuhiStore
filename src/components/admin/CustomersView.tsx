@@ -19,6 +19,7 @@ export default function CustomersView({ users, loading, pagination, onPageChange
           <thead>
             <tr className="bg-white/5 border-b border-brand-border">
               <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-brand-muted">Клиент</th>
+              <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-brand-muted">Статус</th>
               <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-brand-muted">Заказы</th>
               <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-brand-muted">LTV</th>
               <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-brand-muted">Ср. чек</th>
@@ -31,6 +32,16 @@ export default function CustomersView({ users, loading, pagination, onPageChange
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-brand-light">{user.name}</div>
                   <div className="text-xs text-brand-muted">{user.email}</div>
+                  {user.notes && <div className="text-xs text-brand-muted mt-1 italic">"{user.notes}"</div>}
+                </td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded-full text-[10px] font-medium uppercase tracking-wider ${
+                    user.loyaltyStatus === 'VIP' ? 'bg-amber-500/20 text-amber-400' :
+                    user.loyaltyStatus === 'Premium' ? 'bg-purple-500/20 text-purple-400' :
+                    'bg-brand-light/10 text-brand-light'
+                  }`}>
+                    {user.loyaltyStatus || 'Regular'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-brand-light">{user.orderCount || 0}</td>
                 <td className="px-6 py-4 text-sm font-medium text-brand-light">{user.ltv || 0} BYN</td>

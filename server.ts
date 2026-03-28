@@ -196,6 +196,21 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS promo_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    discount_type TEXT NOT NULL,
+    discount_value REAL NOT NULL,
+    min_order_amount REAL DEFAULT 0,
+    valid_from DATETIME,
+    valid_until DATETIME,
+    usage_limit INTEGER DEFAULT 0,
+    used_count INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'Active',
+    applicable_brands TEXT DEFAULT '[]',
+    excluded_brands TEXT DEFAULT '[]'
+  );
 `);
 
 // Seed default home config
@@ -241,7 +256,16 @@ const migrations = [
   "ALTER TABLE products ADD COLUMN tags_be TEXT DEFAULT '[]'",
   "ALTER TABLE cms_pages ADD COLUMN title_be TEXT",
   "ALTER TABLE cms_pages ADD COLUMN content_be TEXT",
-  "ALTER TABLE products ADD COLUMN slug TEXT"
+  "ALTER TABLE products ADD COLUMN slug TEXT",
+  "ALTER TABLE products ADD COLUMN season TEXT DEFAULT '[]'",
+  "ALTER TABLE products ADD COLUMN seo_title TEXT",
+  "ALTER TABLE products ADD COLUMN seo_description TEXT",
+  "ALTER TABLE users ADD COLUMN ltv REAL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN order_count INTEGER DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN avg_order_value REAL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN loyalty_status TEXT DEFAULT 'Regular'",
+  "ALTER TABLE users ADD COLUMN notes TEXT",
+  "ALTER TABLE reviews ADD COLUMN admin_reply TEXT"
 ];
 
 function slugify(text: string) {
@@ -745,6 +769,9 @@ app.get('/api/products', (req, res) => {
         baseNotes: JSON.parse(p.baseNotes),
         tags: JSON.parse(p.tags || '[]'),
         tags_be: JSON.parse(p.tags_be || '[]'),
+        season: JSON.parse(p.season || '[]'),
+        seoTitle: p.seo_title,
+        seoDescription: p.seo_description,
         variants
       };
     });
@@ -867,7 +894,12 @@ app.get('/api/admin/users', requireAuth, (req, res) => {
       GROUP BY u.id
       ORDER BY u.created_at DESC
       LIMIT ? OFFSET ?
-    `).all(limit, offset);
+    `).all(limit, offset).map((u: any) => ({
+      ...u,
+      createdAt: u.created_at,
+      loyaltyStatus: u.loyalty_status,
+      notes: u.notes
+    }));
     res.json({ data: users, total: total.count, page, limit });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch users' });
@@ -887,7 +919,13 @@ app.get('/api/admin/reviews', requireAuth, (req, res) => {
       JOIN products p ON r.product_id = p.id 
       ORDER BY r.created_at DESC
       LIMIT ? OFFSET ?
-    `).all(limit, offset);
+    `).all(limit, offset).map((r: any) => ({
+      ...r,
+      userName: r.user_name,
+      productId: r.product_id,
+      createdAt: r.created_at,
+      adminReply: r.admin_reply
+    }));
     res.json({ data: reviews, total: total.count, page, limit });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch reviews' });
@@ -901,6 +939,16 @@ app.put('/api/admin/reviews/:id', requireAuth, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update review' });
+  }
+});
+
+app.put('/api/admin/reviews/:id/reply', requireAuth, (req, res) => {
+  const { adminReply } = req.body;
+  try {
+    db.prepare('UPDATE reviews SET admin_reply = ? WHERE id = ?').run(adminReply, req.params.id);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add reply' });
   }
 });
 
@@ -1041,13 +1089,13 @@ app.get('/api/stats/views-over-time', requireAuth, (req, res) => {
 });
 
 app.post('/api/products', requireAuth, (req, res) => {
-  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, variants } = req.body;
+  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, season, seoTitle, seoDescription, variants } = req.body;
   const slug = slugify(name);
   
   try {
     const insert = db.prepare(`
-      INSERT INTO products (name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, slug)
-      VALUES (@name, @brand, @description, @description_be, @imageUrl, @images, @price, @topNotes, @heartNotes, @baseNotes, @gender, @scentFamilies, @scentFamilies_be, @concentration, @stockThreshold, @tags, @tags_be, @slug)
+      INSERT INTO products (name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, slug, season, seo_title, seo_description)
+      VALUES (@name, @brand, @description, @description_be, @imageUrl, @images, @price, @topNotes, @heartNotes, @baseNotes, @gender, @scentFamilies, @scentFamilies_be, @concentration, @stockThreshold, @tags, @tags_be, @slug, @season, @seoTitle, @seoDescription)
     `);
     
     const result = insert.run({
@@ -1064,6 +1112,9 @@ app.post('/api/products', requireAuth, (req, res) => {
       stockThreshold,
       tags: JSON.stringify(tags || []),
       tags_be: JSON.stringify(tags_be || []),
+      season: JSON.stringify(season || []),
+      seoTitle: seoTitle || null,
+      seoDescription: seoDescription || null,
       slug
     });
     
@@ -1098,7 +1149,7 @@ app.delete('/api/products/:id', requireAuth, (req, res) => {
 
 app.put('/api/products/:id', requireAuth, (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, variants } = req.body;
+  const { name, brand, description, description_be, imageUrl, images, price, topNotes, heartNotes, baseNotes, gender, scentFamilies, scentFamilies_be, concentration, stockThreshold, tags, tags_be, season, seoTitle, seoDescription, variants } = req.body;
   const slug = slugify(name);
   
   try {
@@ -1106,7 +1157,7 @@ app.put('/api/products/:id', requireAuth, (req, res) => {
       UPDATE products 
       SET name = @name, brand = @brand, description = @description, description_be = @description_be, imageUrl = @imageUrl, images = @images,
           price = @price, topNotes = @topNotes, heartNotes = @heartNotes, baseNotes = @baseNotes, gender = @gender,
-          scentFamilies = @scentFamilies, scentFamilies_be = @scentFamilies_be, concentration = @concentration, stockThreshold = @stockThreshold, tags = @tags, tags_be = @tags_be, slug = @slug
+          scentFamilies = @scentFamilies, scentFamilies_be = @scentFamilies_be, concentration = @concentration, stockThreshold = @stockThreshold, tags = @tags, tags_be = @tags_be, slug = @slug, season = @season, seo_title = @seoTitle, seo_description = @seoDescription
       WHERE id = @id
     `).run({
       id, name, brand, description, description_be: description_be || null, imageUrl,
@@ -1122,6 +1173,9 @@ app.put('/api/products/:id', requireAuth, (req, res) => {
       stockThreshold,
       tags: JSON.stringify(tags || []),
       tags_be: JSON.stringify(tags_be || []),
+      season: JSON.stringify(season || []),
+      seoTitle: seoTitle || null,
+      seoDescription: seoDescription || null,
       slug
     });
 
@@ -1136,6 +1190,100 @@ app.put('/api/products/:id', requireAuth, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update product' });
+  }
+});
+
+// Abandoned Carts
+app.get('/api/admin/abandoned-carts', requireAuth, (req, res) => {
+  try {
+    const carts = db.prepare(`
+      SELECT ac.*, u.name as userName, u.email as userEmail
+      FROM active_carts ac
+      LEFT JOIN users u ON ac.user_id = u.id
+      WHERE ac.updated_at < datetime('now', '-1 hour')
+      ORDER BY ac.updated_at DESC
+    `).all().map((c: any) => ({
+      ...c,
+      items: JSON.parse(c.items || '[]'),
+      updatedAt: c.updated_at
+    }));
+    res.json(carts);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch abandoned carts' });
+  }
+});
+
+// Promo Codes
+app.get('/api/promo-codes', requireAuth, (req, res) => {
+  try {
+    const codes = db.prepare('SELECT * FROM promo_codes ORDER BY id DESC').all();
+    res.json(codes.map((c: any) => ({
+      ...c,
+      applicableBrands: JSON.parse(c.applicable_brands || '[]'),
+      excludedBrands: JSON.parse(c.excluded_brands || '[]'),
+      discountType: c.discount_type,
+      discountValue: c.discount_value,
+      minOrderAmount: c.min_order_amount,
+      validFrom: c.valid_from,
+      validUntil: c.valid_until,
+      usageLimit: c.usage_limit,
+      usedCount: c.used_count
+    })));
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch promo codes' });
+  }
+});
+
+app.post('/api/promo-codes', requireAuth, (req, res) => {
+  const { code, discountType, discountValue, minOrderAmount, validFrom, validUntil, usageLimit, status, applicableBrands, excludedBrands } = req.body;
+  try {
+    const insert = db.prepare(`
+      INSERT INTO promo_codes (code, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_limit, status, applicable_brands, excluded_brands)
+      VALUES (@code, @discountType, @discountValue, @minOrderAmount, @validFrom, @validUntil, @usageLimit, @status, @applicableBrands, @excludedBrands)
+    `);
+    const result = insert.run({
+      code, discountType, discountValue, minOrderAmount: minOrderAmount || 0,
+      validFrom: validFrom || null, validUntil: validUntil || null,
+      usageLimit: usageLimit || 0, status: status || 'Active',
+      applicableBrands: JSON.stringify(applicableBrands || []),
+      excludedBrands: JSON.stringify(excludedBrands || [])
+    });
+    res.status(201).json({ id: result.lastInsertRowid });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create promo code' });
+  }
+});
+
+app.put('/api/promo-codes/:id', requireAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { code, discountType, discountValue, minOrderAmount, validFrom, validUntil, usageLimit, status, applicableBrands, excludedBrands } = req.body;
+  try {
+    db.prepare(`
+      UPDATE promo_codes 
+      SET code = @code, discount_type = @discountType, discount_value = @discountValue, min_order_amount = @minOrderAmount,
+          valid_from = @validFrom, valid_until = @validUntil, usage_limit = @usageLimit, status = @status,
+          applicable_brands = @applicableBrands, excluded_brands = @excludedBrands
+      WHERE id = @id
+    `).run({
+      id, code, discountType, discountValue, minOrderAmount: minOrderAmount || 0,
+      validFrom: validFrom || null, validUntil: validUntil || null,
+      usageLimit: usageLimit || 0, status: status || 'Active',
+      applicableBrands: JSON.stringify(applicableBrands || []),
+      excludedBrands: JSON.stringify(excludedBrands || [])
+    });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update promo code' });
+  }
+});
+
+app.delete('/api/promo-codes/:id', requireAuth, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  try {
+    db.prepare('DELETE FROM promo_codes WHERE id = ?').run(id);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete promo code' });
   }
 });
 

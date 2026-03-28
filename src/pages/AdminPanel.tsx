@@ -12,6 +12,9 @@ import CustomersView from '../components/admin/CustomersView';
 import ReviewsView from '../components/admin/ReviewsView';
 import CMSView from '../components/admin/CMSView';
 import ReportsView from '../components/admin/ReportsView';
+import PromoCodesView from '../components/admin/PromoCodesView';
+import AbandonedCartsView from '../components/admin/AbandonedCartsView';
+import { Tag, ShoppingCart } from 'lucide-react';
 
 export default function AdminPanel() {
   const { theme } = useTheme();
@@ -19,7 +22,7 @@ export default function AdminPanel() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'orders' | 'customers' | 'reviews' | 'cms' | 'reports'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'inventory' | 'orders' | 'customers' | 'reviews' | 'cms' | 'reports' | 'promo' | 'carts'>('dashboard');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -231,7 +234,7 @@ export default function AdminPanel() {
           <button 
             type="submit" 
             disabled={isLoggingIn}
-            className="w-full py-4 bg-white text-brand-bg rounded-xl font-medium hover:bg-white/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+            className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
           >
             {isLoggingIn ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Войти'}
           </button>
@@ -286,13 +289,15 @@ export default function AdminPanel() {
           { id: 'inventory', label: 'Товары', icon: Package },
           { id: 'customers', label: 'Клиенты', icon: Users },
           { id: 'reviews', label: 'Отзывы', icon: MessageSquare },
+          { id: 'promo', label: 'Промокоды', icon: Tag },
+          { id: 'carts', label: 'Брошенные корзины', icon: ShoppingCart },
           { id: 'cms', label: 'Контент', icon: FileText },
           { id: 'reports', label: 'Отчеты', icon: BarChart3 },
         ].map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`pb-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-white text-brand-light' : 'border-transparent text-brand-muted hover:text-white'}`}
+            className={`pb-4 px-4 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 whitespace-nowrap ${activeTab === tab.id ? 'border-brand-accent text-brand-accent' : 'border-transparent text-brand-muted hover:text-white'}`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -353,6 +358,8 @@ export default function AdminPanel() {
               onPageChange={(page) => fetchReviews(page)}
             />
           )}
+          {activeTab === 'promo' && <PromoCodesView token={token!} />}
+          {activeTab === 'carts' && <AbandonedCartsView token={token!} />}
           {activeTab === 'cms' && <CMSView pages={cmsPages} homeConfig={homeConfig} onUpdateHome={fetchCMSData} onUpdatePage={fetchCMSData} token={token!} loading={loading} />}
           {activeTab === 'reports' && <ReportsView token={token!} />}
         </motion.div>

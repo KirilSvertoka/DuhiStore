@@ -33,7 +33,7 @@ export default function NotFound() {
         
         <Link 
           to="/"
-          className="inline-flex items-center gap-2 px-6 py-3 bg-white text-brand-bg rounded-full hover:bg-white/90 transition-colors font-medium"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-brand-accent text-white rounded-full hover:bg-brand-accent-hover transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>{t('returnToBoutique')}</span>

@@ -211,7 +211,7 @@ export default function CMSView({ pages, homeConfig, onUpdateHome, onUpdatePage,
         <div className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm space-y-10">
           <div className="flex items-center justify-between border-b border-brand-border pb-4">
             <h3 className="text-xl font-serif text-brand-light">Настройки главной страницы</h3>
-            <button onClick={saveHomeConfig} className="px-6 py-2 bg-brand-light text-brand-bg rounded-xl font-medium hover:bg-white transition-colors">Сохранить настройки</button>
+            <button onClick={saveHomeConfig} className="px-6 py-2 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors">Сохранить настройки</button>
           </div>
 
           {/* Announcement Bar */}
@@ -447,7 +447,7 @@ export default function CMSView({ pages, homeConfig, onUpdateHome, onUpdatePage,
 
       {editingPage && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-[#660010] w-full max-w-4xl rounded-3xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto border border-brand-border">
+          <div className="bg-brand-bg w-full max-w-4xl rounded-3xl p-8 shadow-2xl max-h-[90vh] overflow-y-auto border border-brand-border">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-serif text-brand-light">Редактирование страницы: {editingPage.title}</h3>
               <button onClick={() => setEditingPage(null)}><XCircle className="w-6 h-6 text-brand-muted hover:text-brand-light" /></button>
@@ -491,7 +491,7 @@ export default function CMSView({ pages, homeConfig, onUpdateHome, onUpdatePage,
               </div>
               <div className="flex justify-end gap-3">
                 <button onClick={() => setEditingPage(null)} className="px-6 py-2 text-brand-muted hover:text-brand-light">Отмена</button>
-                <button onClick={savePage} className="px-6 py-2 bg-brand-light text-brand-bg rounded-xl hover:bg-white">Сохранить изменения</button>
+                <button onClick={savePage} className="px-6 py-2 bg-brand-accent text-white rounded-xl hover:bg-brand-accent-hover">Сохранить изменения</button>
               </div>
             </div>
           </div>

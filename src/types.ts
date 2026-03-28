@@ -56,6 +56,9 @@ export interface Product {
   stockThreshold: number;
   tags: string[];
   tags_be?: string[];
+  season?: string[];
+  seoTitle?: string;
+  seoDescription?: string;
   variants?: ProductVariant[];
 }
 
@@ -70,6 +73,8 @@ export interface User {
   orderCount: number;
   avgOrderValue: number;
   segment?: string;
+  loyaltyStatus?: string;
+  notes?: string;
 }
 
 export interface Order {
@@ -104,7 +109,23 @@ export interface Review {
   rating: number;
   comment: string;
   status: 'Pending' | 'Approved' | 'Rejected';
+  adminReply?: string;
   createdAt: string;
+}
+
+export interface PromoCode {
+  id: number;
+  code: string;
+  discountType: 'fixed' | 'percentage';
+  discountValue: number;
+  minOrderAmount: number;
+  validFrom?: string;
+  validUntil?: string;
+  usageLimit: number;
+  usedCount: number;
+  status: 'Active' | 'Inactive';
+  applicableBrands: string[];
+  excludedBrands: string[];
 }
 
 export interface CMSPage {

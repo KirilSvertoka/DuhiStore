@@ -68,7 +68,7 @@ export default function Wishlist() {
             </p>
             <Link 
               to="/catalog" 
-              className="inline-block px-8 py-3 bg-white text-brand-bg rounded-xl font-medium hover:bg-white/90 transition-colors"
+              className="inline-block px-8 py-3 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors"
             >
               {t('shopCollection')}
             </Link>

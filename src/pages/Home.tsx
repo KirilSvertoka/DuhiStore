@@ -80,13 +80,24 @@ export default function Home() {
       </Helmet>
 
       {/* Hero Section */}
-      <section className="relative h-[85vh] w-full overflow-hidden bg-[#660010]">
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+      <section className="relative h-[85vh] w-full overflow-hidden bg-brand-bg">
+        {config.hero.slides[0]?.image && (
+          <>
+            <img 
+              src={config.hero.slides[0].image} 
+              alt="Hero" 
+              className="absolute inset-0 w-full h-full object-cover opacity-60"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-brand-bg/40 via-transparent to-brand-bg" />
+          </>
+        )}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 z-10">
           <motion.h1 
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4"
+            className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4 drop-shadow-lg"
           >
             <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>{language === 'be' ? 'Архетып:' : 'Архетип:'}</span>
             <span style={{ fontFamily: 'var(--font-arsenica)' }}>{language === 'be' ? 'Парфумерная крама' : 'Парфюмерный магазин'}</span>
@@ -107,7 +118,7 @@ export default function Home() {
           >
             <Link 
               to="/catalog" 
-              className="inline-flex items-center gap-2 bg-white text-[#660010] px-8 py-4 rounded-full font-medium uppercase tracking-widest hover:bg-white/90 transition-colors"
+              className="inline-flex items-center gap-2 bg-brand-accent text-white px-8 py-4 rounded-full font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors"
             >
               {t('shopCollection')}
               <ArrowRight className="w-4 h-4" />

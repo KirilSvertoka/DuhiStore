@@ -92,13 +92,14 @@ export default function Layout() {
       </AnimatePresence>
 
       {!isLoading && (
-        <div className="min-h-screen bg-brand-bg text-brand-light font-sans selection:bg-white/20 transition-colors duration-300">
-      {config?.announcement?.active && (
-        <div className="bg-white text-brand-bg text-center py-2 px-4 text-xs font-medium uppercase tracking-widest">
-          {language === 'be' && config.announcement.text_be ? config.announcement.text_be : config.announcement.text}
-        </div>
-      )}
-      <header className="sticky top-0 z-50 bg-brand-bg/90 backdrop-blur-md border-b border-brand-border transition-colors duration-300">
+        <div className="min-h-screen bg-brand-bg text-brand-light font-sans selection:bg-brand-accent/50 transition-colors duration-300">
+          <div className="sticky top-0 z-50 flex flex-col">
+            {config?.announcement?.active && (
+              <div className="bg-brand-accent text-white text-center py-2 px-4 text-xs font-medium uppercase tracking-widest">
+                {language === 'be' && config.announcement.text_be ? config.announcement.text_be : config.announcement.text}
+              </div>
+            )}
+            <header className="bg-brand-bg/90 backdrop-blur-md border-b border-brand-border transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
@@ -181,7 +182,7 @@ export default function Layout() {
                 >
                   <Heart className="w-5 h-5" />
                   {wishlist.length > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-white text-brand-bg text-[10px] font-bold flex items-center justify-center rounded-full transform translate-x-1 -translate-y-1">
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-brand-accent text-white text-[10px] font-bold flex items-center justify-center rounded-full transform translate-x-1 -translate-y-1">
                       {wishlist.length}
                     </span>
                   )}
@@ -194,7 +195,7 @@ export default function Layout() {
                 >
                   <ShoppingBag className="w-5 h-5" />
                   {items.length > 0 && (
-                    <span className="absolute top-1 right-1 w-4 h-4 bg-white text-brand-bg text-[10px] font-bold flex items-center justify-center rounded-full transform translate-x-1 -translate-y-1">
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-brand-accent text-white text-[10px] font-bold flex items-center justify-center rounded-full transform translate-x-1 -translate-y-1">
                       {items.reduce((sum, item) => sum + item.quantity, 0)}
                     </span>
                   )}
@@ -212,6 +213,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
+      </div>
 
       {/* Mobile Menu Drawer */}
       <AnimatePresence>

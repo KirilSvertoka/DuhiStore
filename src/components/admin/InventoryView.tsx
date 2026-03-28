@@ -89,7 +89,7 @@ export default function InventoryView({ products, loading, token, onUpdate, onAu
           </select>
           <button 
             onClick={() => setIsAdding(true)}
-            className="flex-1 md:flex-none px-4 py-2 bg-brand-light text-brand-bg rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-white transition-colors"
+            className="flex-1 md:flex-none px-4 py-2 bg-brand-accent text-white rounded-xl text-sm font-medium flex items-center justify-center gap-2 hover:bg-brand-accent-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>Добавить товар</span>
