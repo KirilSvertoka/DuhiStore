@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { CMSPage, HomeConfig } from '../../types';
+import { CMSPage, HomeConfig, GeneralSettings } from '../../types';
 import { XCircle, Plus, Trash2, GripVertical, Image as ImageIcon, UploadCloud } from 'lucide-react';
 
 interface CMSViewProps {
@@ -14,6 +14,28 @@ interface CMSViewProps {
 export default function CMSView({ pages, homeConfig, onUpdateHome, onUpdatePage, token, loading }: CMSViewProps) {
   const [editingPage, setEditingPage] = useState<CMSPage | null>(null);
   const [localHomeConfig, setLocalHomeConfig] = useState<HomeConfig | null>(homeConfig);
+  const [localGeneralSettings, setLocalGeneralSettings] = useState<GeneralSettings | null>(null);
+
+  React.useEffect(() => {
+    fetch('/api/settings/general')
+      .then(res => res.json())
+      .then(data => setLocalGeneralSettings(data))
+      .catch(console.error);
+  }, []);
+
+  const saveGeneralSettings = async () => {
+    if (!localGeneralSettings) return;
+    try {
+      const res = await fetch('/api/settings/general', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(localGeneralSettings)
+      });
+      if (res.ok) {
+        alert('Общие настройки успешно сохранены!');
+      }
+    } catch (err) { console.error(err); }
+  };
 
   const handleFileUpload = async (file: File, callback: (url: string) => void) => {
     if (!file.type.startsWith('image/')) {
@@ -207,6 +229,54 @@ export default function CMSView({ pages, homeConfig, onUpdateHome, onUpdatePage,
 
   return (
     <div className="space-y-8 pb-12">
+      {localGeneralSettings && (
+        <div className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-brand-border pb-4">
+            <h3 className="text-xl font-serif text-brand-light">Общие настройки</h3>
+            <button onClick={saveGeneralSettings} className="px-6 py-2 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors">Сохранить настройки</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ImageDropzone 
+              label="Фото для страницы 'О нас'"
+              currentUrl={localGeneralSettings.aboutPhoto}
+              onUpload={(file) => handleFileUpload(file, (url) => setLocalGeneralSettings({...localGeneralSettings, aboutPhoto: url}))}
+            />
+            <div className="space-y-4">
+              <input type="text" value={localGeneralSettings.instagram} onChange={e => setLocalGeneralSettings({...localGeneralSettings, instagram: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Instagram URL" />
+              <input type="text" value={localGeneralSettings.telegram} onChange={e => setLocalGeneralSettings({...localGeneralSettings, telegram: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Telegram URL" />
+              <input type="text" value={localGeneralSettings.email} onChange={e => setLocalGeneralSettings({...localGeneralSettings, email: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Email" />
+              <input type="text" value={localGeneralSettings.phone} onChange={e => setLocalGeneralSettings({...localGeneralSettings, phone: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Телефон" />
+              <input type="text" value={localGeneralSettings.address} onChange={e => setLocalGeneralSettings({...localGeneralSettings, address: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Адрес (RU)" />
+              <input type="text" value={localGeneralSettings.address_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, address_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Адрес (BE)" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-brand-border">
+            <div className="space-y-4">
+              <input type="text" value={localGeneralSettings.aboutTitle} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutTitle: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Заголовок 'О нас' (RU)" />
+              <input type="text" value={localGeneralSettings.aboutTitle_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutTitle_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Заголовок 'О нас' (BE)" />
+              <textarea value={localGeneralSettings.aboutDescription} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutDescription: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Описание 'О нас' (RU)" rows={3} />
+              <textarea value={localGeneralSettings.aboutDescription_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutDescription_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Описание 'О нас' (BE)" rows={3} />
+            </div>
+            <div className="space-y-4">
+              <input type="text" value={localGeneralSettings.aboutArtTitle} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtTitle: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Заголовок 'Искусство' (RU)" />
+              <input type="text" value={localGeneralSettings.aboutArtTitle_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtTitle_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Заголовок 'Искусство' (BE)" />
+              <textarea value={localGeneralSettings.aboutArtText1} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtText1: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Текст 1 'Искусство' (RU)" rows={3} />
+              <textarea value={localGeneralSettings.aboutArtText1_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtText1_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Текст 1 'Искусство' (BE)" rows={3} />
+              <textarea value={localGeneralSettings.aboutArtText2} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtText2: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Текст 2 'Искусство' (RU)" rows={3} />
+              <textarea value={localGeneralSettings.aboutArtText2_be || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, aboutArtText2_be: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder="Текст 2 'Искусство' (BE)" rows={3} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-brand-border">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="space-y-2">
+                <input type="text" value={localGeneralSettings[`stat${i}Value` as keyof GeneralSettings] as string} onChange={e => setLocalGeneralSettings({...localGeneralSettings, [`stat${i}Value`]: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder={`Значение ${i}`} />
+                <input type="text" value={localGeneralSettings[`stat${i}Label` as keyof GeneralSettings] as string} onChange={e => setLocalGeneralSettings({...localGeneralSettings, [`stat${i}Label`]: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder={`Лейбл ${i} (RU)`} />
+                <input type="text" value={(localGeneralSettings[`stat${i}Label_be` as keyof GeneralSettings] as string) || ''} onChange={e => setLocalGeneralSettings({...localGeneralSettings, [`stat${i}Label_be`]: e.target.value})} className="w-full px-4 py-2 bg-transparent border border-brand-border rounded-xl text-sm text-brand-light" placeholder={`Лейбл ${i} (BE)`} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {localHomeConfig && (
         <div className="bg-white/5 p-8 rounded-3xl border border-brand-border shadow-sm space-y-10">
           <div className="flex items-center justify-between border-b border-brand-border pb-4">

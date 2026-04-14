@@ -148,3 +148,32 @@ export interface HomeConfig {
   promoImages: string[];
   dynamicBlocks: { type: 'New' | 'BestSellers' | 'Recommended'; title: string; title_be?: string; active: boolean }[];
 }
+
+export interface GeneralSettings {
+  aboutPhoto: string;
+  instagram: string;
+  telegram: string;
+  email: string;
+  phone: string;
+  address: string;
+  address_be?: string;
+  aboutTitle: string;
+  aboutTitle_be?: string;
+  aboutDescription: string;
+  aboutDescription_be?: string;
+  aboutArtTitle: string;
+  aboutArtTitle_be?: string;
+  aboutArtText1: string;
+  aboutArtText1_be?: string;
+  aboutArtText2: string;
+  aboutArtText2_be?: string;
+  stat1Value: string;
+  stat1Label: string;
+  stat1Label_be?: string;
+  stat2Value: string;
+  stat2Label: string;
+  stat2Label_be?: string;
+  stat3Value: string;
+  stat3Label: string;
+  stat3Label_be?: string;
+}

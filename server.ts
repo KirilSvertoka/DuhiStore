@@ -241,7 +241,36 @@ const defaultHomeConfig = {
     { type: 'Recommended', title: 'Рекомендуем', title_be: 'Рэкамендуем', active: true }
   ]
 };
+const defaultGeneralSettings = {
+  aboutPhoto: "https://images.unsplash.com/photo-1594035910387-fea47794261f?q=80&w=2000&auto=format&fit=crop",
+  instagram: "https://instagram.com",
+  telegram: "https://t.me/username",
+  email: "hello@arhetip.com",
+  phone: "+375 (29) 123-45-67",
+  address: "ул. Парфюмерная 123, Минск, Беларусь",
+  address_be: "вул. Парфумерная 123, Мінск, Беларусь",
+  aboutTitle: "Наша история",
+  aboutTitle_be: "Наша гісторыя",
+  aboutDescription: "Путешествие в мир высокой парфюмерии, где мы собираем самые изысканные ароматы для современных людей.",
+  aboutDescription_be: "Падарожжа ў свет высокай парфумерыі, дзе мы збіраем самыя вытанчаныя водары для сучасных людзей.",
+  aboutArtTitle: "Искусство выбора",
+  aboutArtTitle_be: "Мастацтва выбару",
+  aboutArtText1: "Основанный в 2020 году, Arhetip родился из страсти к нишевой парфюмерии. Мы верим, что аромат — это больше, чем просто запах. Это невидимый аксессуар, триггер воспоминаний и глубокое выражение личности.",
+  aboutArtText1_be: "Заснаваны ў 2020 годзе, Arhetip нарадзіўся з запалу да нішавай парфумерыі. Мы верым, што водар — гэта больш, чым проста пах. Гэта нябачны аксэсуар, трыгер успамінаў і глыбокае выяўленне асобы.",
+  aboutArtText2: "Наша коллекция тщательно отобрана. Мы путешествуем по миру, чтобы найти независимых парфюмеров, которые ставят качество ингредиентов и инновационные композиции выше массовой привлекательности. Каждый флакон в нашем магазине был протестирован и полюблен нашей командой.",
+  aboutArtText2_be: "Наша калекцыя старанна адабрана. Мы падарожнічаем па свеце, каб знайсці незалежных парфумераў, якія ставяць якасць інгрэдыентаў і інавацыйныя кампазіцыі вышэй за масавую прывабнасць. Кожны флакон у нашай краме быў пратэставаны і ўпадабаны нашай камандай.",
+  stat1Value: "50+",
+  stat1Label: "Уникальных ароматов",
+  stat1Label_be: "Унікальных водараў",
+  stat2Value: "12",
+  stat2Label: "Нишевых брендов",
+  stat2Label_be: "Нішавых брэндаў",
+  stat3Value: "10k+",
+  stat3Label: "Счастливых клиентов",
+  stat3Label_be: "Шчаслівых кліентаў"
+};
 db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('home_config', JSON.stringify(defaultHomeConfig));
+db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)').run('general_settings', JSON.stringify(defaultGeneralSettings));
 
 // Migration for new columns
 const migrations = [
@@ -653,6 +682,29 @@ app.put('/api/settings/home', requireAuth, (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update config' });
+  }
+});
+
+app.get('/api/settings/general', (req, res) => {
+  try {
+    const row = db.prepare('SELECT value FROM settings WHERE key = ?').get('general_settings') as { value: string };
+    if (row) {
+      res.json(JSON.parse(row.value));
+    } else {
+      res.status(404).json({ error: 'Settings not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.put('/api/settings/general', requireAuth, (req, res) => {
+  try {
+    const settings = req.body;
+    db.prepare('UPDATE settings SET value = ? WHERE key = ?').run(JSON.stringify(settings), 'general_settings');
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

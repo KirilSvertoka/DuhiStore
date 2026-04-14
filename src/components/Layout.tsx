@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Droplets, Moon, Sun, Instagram, Send, Mail, ShoppingBag, Heart, Menu, X, ChevronDown } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useState, useEffect, useRef } from 'react';
-import { HomeConfig } from '../types';
+import { HomeConfig, GeneralSettings } from '../types';
 import { useLanguage } from './LanguageProvider';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function Layout() {
   const { theme, toggleTheme } = useTheme();
   const [config, setConfig] = useState<HomeConfig | null>(null);
+  const [settings, setSettings] = useState<GeneralSettings | null>(null);
   const { language, setLanguage, t } = useLanguage();
   const { items, setIsCartOpen } = useCart();
   const { wishlist } = useWishlist();
@@ -51,12 +52,14 @@ export default function Layout() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/settings/home');
-        if (!res.ok) throw new Error(`Config fetch failed: ${res.status}`);
-        const data = await res.json();
-        setConfig(data);
+        const [configRes, settingsRes] = await Promise.all([
+          fetch('/api/settings/home'),
+          fetch('/api/settings/general')
+        ]);
+        if (configRes.ok) setConfig(await configRes.json());
+        if (settingsRes.ok) setSettings(await settingsRes.json());
       } catch (error) {
-        console.error('Failed to load home config in Layout', error);
+        console.error('Failed to load config/settings in Layout', error);
       }
     };
 
@@ -293,13 +296,13 @@ export default function Layout() {
                 </div>
 
                 <div className="mt-12 flex gap-6">
-                  <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
+                  <a href={settings?.instagram || "https://instagram.com"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
                     <Instagram className="w-6 h-6" />
                   </a>
-                  <a href="https://t.me/username" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
+                  <a href={settings?.telegram || "https://t.me/username"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
                     <Send className="w-6 h-6" />
                   </a>
-                  <a href="mailto:hello@arhetip.com" className="text-brand-muted hover:text-white">
+                  <a href={`mailto:${settings?.email || 'hello@arhetip.com'}`} className="text-brand-muted hover:text-white">
                     <Mail className="w-6 h-6" />
                   </a>
                 </div>
