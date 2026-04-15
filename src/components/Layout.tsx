@@ -197,8 +197,11 @@ export default function Layout() {
                   )}
                 </Link>
 
-                <button 
+                <motion.button 
+                  id="cart-button"
                   onClick={() => setIsCartOpen(true)}
+                  animate={items.length > 0 ? { scale: [1, 1.2, 1] } : {}}
+                  key={items.length}
                   className="relative p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-hover rounded-lg transition-colors"
                   title={t('cart')}
                 >
@@ -208,7 +211,7 @@ export default function Layout() {
                       {items.reduce((sum, item) => sum + item.quantity, 0)}
                     </span>
                   )}
-                </button>
+                </motion.button>
 
                 <button
                   onClick={() => setLanguage(language === 'ru' ? 'be' : 'ru')}

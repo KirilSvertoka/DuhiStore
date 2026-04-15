@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Minus, Plus, ShoppingBag, CheckCircle2, ArrowLeft, RefreshCw, CreditCard, Truck, MapPin } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, CheckCircle2, ArrowLeft, RefreshCw, CreditCard, Truck, MapPin, Search, ChevronDown } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useLanguage } from './LanguageProvider';
 import { getVariantType } from '../types';
+import { europostOffices } from '../data/europostOffices';
 
 export default function CartDrawer() {
   const { items, isCartOpen, setIsCartOpen, updateQuantity, total, clearCart, justAdded } = useCart();
@@ -18,6 +19,28 @@ export default function CartDrawer() {
     deliveryMethod: 'europost',
     address: '',
     comment: ''
+  });
+  const [officeSearch, setOfficeSearch] = useState('');
+  const [showOfficeDropdown, setShowOfficeDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowOfficeDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOffices = europostOffices.filter(office => {
+    const matchesCity = !customerData.city || office.city.toLowerCase().includes(customerData.city.toLowerCase());
+    const matchesSearch = !officeSearch || 
+      office.address.toLowerCase().includes(officeSearch.toLowerCase()) || 
+      office.department.toLowerCase().includes(officeSearch.toLowerCase()) ||
+      office.city.toLowerCase().includes(officeSearch.toLowerCase());
+    return matchesCity && matchesSearch;
   });
 
   useEffect(() => {
@@ -243,16 +266,95 @@ export default function CartDrawer() {
                           className="pt-2"
                         >
                           <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1">
-                            {customerData.deliveryMethod === 'courier' ? 'Улица, дом, квартира *' : 'Отделение почты / Адрес *'}
+                            {customerData.deliveryMethod === 'courier' ? 'Улица, дом, квартира *' : 
+                             customerData.deliveryMethod === 'europost' ? 'Пункт выдачи Европочты *' : 'Отделение почты / Адрес *'}
                           </label>
-                          <input 
-                            required
-                            type="text" 
-                            value={customerData.address}
-                            onChange={e => setCustomerData({...customerData, address: e.target.value})}
-                            className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm mt-1"
-                            placeholder={customerData.deliveryMethod === 'courier' ? 'ул. Ленина, д. 1, кв. 1' : 'Отделение №123 или полный адрес'}
-                          />
+                          
+                          {customerData.deliveryMethod === 'europost' ? (
+                            <div className="relative mt-1" ref={dropdownRef}>
+                              <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-muted" />
+                                <input 
+                                  required
+                                  type="text" 
+                                  value={customerData.address}
+                                  onChange={e => {
+                                    setCustomerData({...customerData, address: e.target.value});
+                                    setOfficeSearch(e.target.value);
+                                    setShowOfficeDropdown(true);
+                                  }}
+                                  onFocus={() => setShowOfficeDropdown(true)}
+                                  className="w-full pl-10 pr-10 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm"
+                                  placeholder="Начните вводить адрес или номер отделения"
+                                />
+                                {customerData.address && (
+                                  <button 
+                                    type="button"
+                                    onClick={() => {
+                                      setCustomerData({...customerData, address: ''});
+                                      setOfficeSearch('');
+                                    }}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-brand-muted hover:text-brand-accent transition-colors"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              
+                              <AnimatePresence>
+                                {showOfficeDropdown && filteredOffices.length > 0 && (
+                                  <motion.div 
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    className="absolute left-0 right-0 top-full mt-2 bg-brand-bg border border-brand-border rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto no-scrollbar"
+                                  >
+                                    {filteredOffices.map((office, idx) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                          setCustomerData({
+                                            ...customerData, 
+                                            address: `${office.city}, ${office.address} (${office.department})`,
+                                            city: office.city // Auto-fill city if selected from dropdown
+                                          });
+                                          setOfficeSearch('');
+                                          setShowOfficeDropdown(false);
+                                        }}
+                                        className="w-full text-left p-4 hover:bg-brand-hover transition-colors border-b border-brand-border last:border-0"
+                                      >
+                                        <p className="text-sm font-medium text-brand-light">{office.city}, {office.address}</p>
+                                        <p className="text-xs text-brand-accent mt-1">{office.department}</p>
+                                      </button>
+                                    ))}
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+                              
+                              {showOfficeDropdown && filteredOffices.length === 0 && (
+                                <motion.div 
+                                  initial={{ opacity: 0, y: -10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="absolute left-0 right-0 top-full mt-2 p-4 bg-brand-bg border border-brand-border rounded-xl shadow-2xl z-50 text-center"
+                                >
+                                  <p className="text-sm text-brand-muted">Отделения не найдены</p>
+                                  {customerData.city && (
+                                    <p className="text-xs text-brand-accent mt-1">Попробуйте изменить город или очистить поиск</p>
+                                  )}
+                                </motion.div>
+                              )}
+                            </div>
+                          ) : (
+                            <input 
+                              required
+                              type="text" 
+                              value={customerData.address}
+                              onChange={e => setCustomerData({...customerData, address: e.target.value})}
+                              className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm mt-1"
+                              placeholder={customerData.deliveryMethod === 'courier' ? 'ул. Ленина, д. 1, кв. 1' : 'Отделение №123 или полный адрес'}
+                            />
+                          )}
                         </motion.div>
                       )}
                     </div>
@@ -342,7 +444,7 @@ export default function CartDrawer() {
                   <motion.button 
                     onClick={() => setIsCheckingOut(true)}
                     animate={justAdded ? { scale: [1, 1.05, 1], transition: { repeat: 3, duration: 0.5 } } : {}}
-                    className={`w-full py-4 text-white rounded-xl font-medium uppercase tracking-widest transition-colors ${justAdded ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-brand-accent hover:bg-brand-accent-hover'}`}
+                    className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors"
                   >
                     {t('checkout')}
                   </motion.button>

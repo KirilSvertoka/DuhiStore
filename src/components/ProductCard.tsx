@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Product, getVariantType } from '../types';
 import { Link } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { useLanguage } from './LanguageProvider';
 import { useCart } from './CartProvider';
 import { useWishlist } from './WishlistProvider';
@@ -11,14 +11,22 @@ interface ProductCardProps {
   product: Product;
 }
 
+interface FlyingItem {
+  id: number;
+  x: number;
+  y: number;
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const { t, language } = useLanguage();
   const { addToCart } = useCart();
   const { isInWishlist, toggleWishlist } = useWishlist();
   const [selectedVariantId, setSelectedVariantId] = useState<number | undefined>(
     product.variants && product.variants.length > 0 ? product.variants[0].id : undefined
   );
+  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
 
   const { scrollYProgress } = useScroll({
     target: ref,
@@ -32,6 +40,18 @@ export default function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Start animation
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const newItem = {
+        id: Date.now(),
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      setFlyingItems(prev => [...prev, newItem]);
+    }
+
     addToCart(product, selectedVariantId);
   };
 
@@ -50,7 +70,50 @@ export default function ProductCard({ product }: ProductCardProps) {
   const isWishlisted = isInWishlist(product.id);
 
   return (
-    <div ref={ref} className="block w-full h-full group overflow-hidden bg-brand-bg relative">
+    <motion.div 
+      ref={ref} 
+      initial="initial"
+      whileHover="hover"
+      className="block w-full h-full group overflow-hidden bg-brand-bg relative"
+    >
+      <AnimatePresence>
+        {flyingItems.map(item => {
+          const cartButton = document.getElementById('cart-button');
+          const targetRect = cartButton?.getBoundingClientRect() || { left: window.innerWidth - 50, top: 50 };
+          
+          return (
+            <motion.div
+              key={item.id}
+              initial={{ 
+                x: item.x - 12, 
+                y: item.y - 12, 
+                scale: 1, 
+                opacity: 1 
+              }}
+              animate={{ 
+                x: targetRect.left + 10, 
+                y: targetRect.top + 10, 
+                scale: 0.2, 
+                opacity: 0.5 
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 0.8, 
+                ease: [0.4, 0, 0.2, 1] 
+              }}
+              onAnimationComplete={() => {
+                setFlyingItems(prev => prev.filter(i => i.id !== item.id));
+              }}
+              className="fixed top-0 left-0 z-[9999] pointer-events-none"
+            >
+              <div className="w-6 h-6 bg-brand-accent rounded-full flex items-center justify-center shadow-lg">
+                <ShoppingBag className="w-3 h-3 text-white" />
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
       <div className="relative w-full aspect-[3/4] overflow-hidden">
         {/* Wishlist Button - Outside Link to be valid HTML */}
         <button
@@ -70,7 +133,9 @@ export default function ProductCard({ product }: ProductCardProps) {
           <motion.img 
             style={{ y }}
             initial={{ scale: 1.2 }}
-            whileHover={{ scale: 1, opacity: 0.6 }}
+            variants={{
+              hover: { scale: 1, opacity: 0.6 }
+            }}
             transition={{ duration: 0.7, ease: [0.25, 1, 0.5, 1] }}
             src={product.imageUrl} 
             alt={product.name} 
@@ -110,7 +175,14 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </p>
                     
                     {/* Add to Cart Section */}
-                    <div className="pointer-events-auto flex flex-col items-start gap-4 w-full">
+                    <motion.div 
+                      variants={{
+                        initial: { opacity: 0, y: 20 },
+                        hover: { opacity: 1, y: 0 }
+                      }}
+                      transition={{ duration: 0.6, ease: [0.25, 1, 0.5, 1], delay: 0.1 }}
+                      className="pointer-events-auto flex flex-col items-start gap-4 w-full"
+                    >
                       {product.variants && product.variants.length > 0 && (
                         <div className="flex flex-col gap-3 w-full max-h-32 overflow-y-auto custom-scrollbar pr-2">
                           {Object.entries(
@@ -149,15 +221,17 @@ export default function ProductCard({ product }: ProductCardProps) {
                           ))}
                         </div>
                       )}
-                      <button
+                      <motion.button
+                        ref={buttonRef}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleAddToCart}
                         disabled={product.variants && product.variants.length > 0 && !selectedVariantId}
                         className="w-full inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-brand-accent text-white rounded-xl font-medium hover:bg-brand-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                       >
                         <ShoppingBag className="w-4 h-4" />
                         <span>{t('addToCart')}</span>
-                      </button>
-                    </div>
+                      </motion.button>
+                    </motion.div>
                   </div>
                 </div>
               </div>
@@ -165,6 +239,6 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </Link>
       </div>
-    </div>
+    </motion.div>
   );
 }

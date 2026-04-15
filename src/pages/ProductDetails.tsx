@@ -1,14 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Product, getVariantType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, X, ChevronLeft, ChevronRight, ShoppingBag, Minus, Plus } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import NoteDiagram from '../components/NoteDiagram';
 import { useCart } from '../components/CartProvider';
 import { useLanguage } from '../components/LanguageProvider';
 import RelatedProducts from '../components/RelatedProducts';
 import RecentlyViewed from '../components/RecentlyViewed';
+
+interface FlyingItem {
+  id: number;
+  x: number;
+  y: number;
+}
 
 export default function ProductDetails() {
   const { slug } = useParams();
@@ -20,8 +26,32 @@ export default function ProductDetails() {
   const [selectedVariantId, setSelectedVariantId] = useState<number | undefined>(undefined);
   const [isFullscreenGalleryOpen, setIsFullscreenGalleryOpen] = useState(false);
   const [fullscreenImageIndex, setFullscreenImageIndex] = useState(0);
+  const [flyingItems, setFlyingItems] = useState<FlyingItem[]>([]);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const [quantity, setQuantity] = useState(1);
 
   const allImages = product ? [product.imageUrl, ...(product.images || [])] : [];
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    // Start animation
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const newItem = {
+        id: Date.now(),
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+      };
+      setFlyingItems(prev => [...prev, newItem]);
+    }
+
+    // Add to cart with quantity
+    for (let i = 0; i < quantity; i++) {
+      addToCart(product, selectedVariantId);
+    }
+  };
 
   const openFullscreen = (index: number) => {
     setFullscreenImageIndex(index);
@@ -124,6 +154,44 @@ export default function ProductDetails() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
     >
+      <AnimatePresence>
+        {flyingItems.map(item => {
+          const cartButton = document.getElementById('cart-button');
+          const targetRect = cartButton?.getBoundingClientRect() || { left: window.innerWidth - 50, top: 50 };
+          
+          return (
+            <motion.div
+              key={item.id}
+              initial={{ 
+                x: item.x - 12, 
+                y: item.y - 12, 
+                scale: 1, 
+                opacity: 1 
+              }}
+              animate={{ 
+                x: targetRect.left + 10, 
+                y: targetRect.top + 10, 
+                scale: 0.2, 
+                opacity: 0.5 
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ 
+                duration: 0.8, 
+                ease: [0.4, 0, 0.2, 1] 
+              }}
+              onAnimationComplete={() => {
+                setFlyingItems(prev => prev.filter(i => i.id !== item.id));
+              }}
+              className="fixed top-0 left-0 z-[9999] pointer-events-none"
+            >
+              <div className="w-6 h-6 bg-brand-accent rounded-full flex items-center justify-center shadow-lg">
+                <ShoppingBag className="w-3 h-3 text-white" />
+              </div>
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+
       <Helmet>
         <title>{`${product.name} — ${product.brand} | Arhetip`}</title>
         <meta name="description" content={product.description.substring(0, 160)} />
@@ -180,27 +248,21 @@ export default function ProductDetails() {
         </div>
 
         <div className="flex flex-col justify-center">
-          <div className="mb-8">
-            <p className="text-sm font-medium uppercase tracking-widest text-brand-muted mb-3">{product.brand}</p>
-            <h1 className="text-4xl md:text-5xl font-serif text-brand-light mb-4 leading-tight">{product.name}</h1>
-            <div className="flex flex-col">
-              <p className="font-mono text-2xl text-brand-light">
-                {(selectedVariantId 
-                  ? product.variants?.find(v => v.id === selectedVariantId)?.price 
-                  : product.price
-                )?.toFixed(2)} {t('currency')}
-              </p>
-              {selectedVariantId && product.variants?.find(v => v.id === selectedVariantId)?.stock === 0 && (
-                <p className="text-sm font-bold text-red-500 uppercase tracking-widest mt-1">
-                  {language === 'be' ? 'Няма ў наяўнасці' : 'Нет в наличии'}
-                </p>
-              )}
+          <div className="mb-6">
+            <p className="text-sm font-medium uppercase tracking-widest text-brand-muted mb-2">{product.brand}</p>
+            <h1 className="text-4xl md:text-5xl font-serif text-brand-light mb-2 leading-tight">{product.name}</h1>
+            <div className="flex items-center gap-4 text-brand-muted text-sm mb-6">
+              <span>{product.concentration || 'EDP'}</span>
+              <span className="w-px h-4 bg-brand-border" />
+              <span>{product.gender === 'Male' ? (language === 'be' ? 'Для яго' : 'Для него') : product.gender === 'Female' ? (language === 'be' ? 'Для яе' : 'Для нее') : (language === 'be' ? 'Унісекс' : 'Для него и для нее')}</span>
             </div>
           </div>
 
           {product.variants && product.variants.length > 0 && (
             <div className="mb-8">
-              <p className="text-xs font-medium uppercase tracking-wider text-brand-muted mb-4 ml-1">Выберите объем</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-brand-muted mb-4 ml-1">
+                {language === 'be' ? 'Аб\'ём' : 'Объем'}
+              </p>
               <div className="flex flex-col gap-6">
                 {Object.entries(
                   product.variants.reduce((acc, variant) => {
@@ -211,32 +273,20 @@ export default function ProductDetails() {
                   }, {} as Record<string, typeof product.variants>)
                 ).map(([type, variants]) => (
                   <div key={type} className="space-y-3">
-                    <h3 className="text-sm font-medium text-brand-light/80 uppercase tracking-widest ml-1">{type}</h3>
-                    <div className="flex flex-col gap-2">
+                    <h3 className="text-[10px] font-medium text-brand-muted uppercase tracking-[0.2em] ml-1">{type}</h3>
+                    <div className="flex flex-wrap gap-2">
                         {(variants as typeof product.variants).map((variant) => (
                           <button
                             key={variant.id}
                             onClick={() => setSelectedVariantId(variant.id)}
-                            className={`relative flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
+                            disabled={variant.stock === 0}
+                            className={`px-6 py-3 rounded-lg border text-sm font-medium transition-all duration-300 ${
                               selectedVariantId === variant.id
-                                ? 'border-brand-accent bg-brand-light text-brand-bg shadow-xl scale-[1.02] z-10'
-                                : 'border-brand-border text-brand-muted hover:border-brand-accent/40 hover:text-brand-accent'
-                            }`}
+                                ? 'bg-brand-light text-brand-bg border-brand-light shadow-lg'
+                                : 'border-brand-border text-brand-light hover:border-brand-accent/60'
+                            } ${variant.stock === 0 ? 'opacity-40 cursor-not-allowed grayscale' : ''}`}
                           >
-                            <div className="flex items-center gap-4">
-                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-colors ${selectedVariantId === variant.id ? 'border-brand-bg bg-brand-bg' : 'border-brand-muted'}`}>
-                                {selectedVariantId === variant.id && <div className="w-2.5 h-2.5 rounded-full bg-brand-accent" />}
-                              </div>
-                              <div className="flex flex-col items-start">
-                                <span className="text-base font-bold">{variant.size}</span>
-                                {variant.stock === 0 && (
-                                  <span className={`text-[10px] uppercase tracking-tighter font-bold ${selectedVariantId === variant.id ? 'text-brand-bg/70' : 'text-red-500'}`}>
-                                    {language === 'be' ? 'Няма ў наяўнасці' : 'Нет в наличии'}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <span className="text-lg font-mono">{variant.price.toFixed(2)} {t('currency')}</span>
+                            {variant.size}
                           </button>
                         ))}
                     </div>
@@ -246,13 +296,60 @@ export default function ProductDetails() {
             </div>
           )}
 
-          <button 
-            onClick={() => addToCart(product, selectedVariantId)}
-            disabled={selectedVariantId ? product.variants?.find(v => v.id === selectedVariantId)?.stock === 0 : false}
-            className="w-full md:w-auto px-12 py-4 mb-12 bg-brand-accent text-white rounded-full font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {t('addToCart')}
-          </button>
+          <div className="mb-8">
+            <div className="flex items-baseline gap-2 mb-6">
+              <span className="text-3xl font-serif text-brand-light">
+                {(selectedVariantId 
+                  ? product.variants?.find(v => v.id === selectedVariantId)?.price 
+                  : product.price
+                )?.toFixed(2)} {t('currency')}
+              </span>
+              {selectedVariantId && product.variants?.find(v => v.id === selectedVariantId)?.stock === 0 && (
+                <span className="text-xs font-bold text-red-500 uppercase tracking-widest">
+                  {language === 'be' ? 'Няма ў наяўнасці' : 'Нет в наличии'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-medium uppercase tracking-widest text-brand-muted ml-1">
+                  {language === 'be' ? 'Колькасць' : 'Количество'}
+                </label>
+                <div className="flex items-center w-32 bg-brand-hover border border-brand-border rounded-xl overflow-hidden">
+                  <button 
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="flex-1 h-12 flex items-center justify-center text-brand-light hover:bg-brand-accent/10 transition-colors"
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <input 
+                    type="number" 
+                    value={quantity}
+                    onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                    className="w-10 text-center bg-transparent border-none focus:ring-0 text-brand-light font-medium"
+                  />
+                  <button 
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="flex-1 h-12 flex items-center justify-center text-brand-light hover:bg-brand-accent/10 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <motion.button 
+                ref={buttonRef}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleAddToCart}
+                disabled={selectedVariantId ? product.variants?.find(v => v.id === selectedVariantId)?.stock === 0 : false}
+                className="w-full md:w-auto px-12 py-5 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-all shadow-xl shadow-brand-accent/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span>{t('addToCart')}</span>
+              </motion.button>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4 mb-12">
             <div className="bg-brand-hover p-4 rounded-2xl border border-brand-border">

@@ -394,7 +394,7 @@ export default function Storefront() {
           </div>
         )}
         
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 bg-brand-border overflow-hidden transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1 bg-brand-border overflow-hidden transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
           {products.map((product, index) => {
             return (
               <div key={product.id} className="bg-brand-bg">
