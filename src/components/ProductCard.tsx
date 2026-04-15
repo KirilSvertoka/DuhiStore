@@ -87,11 +87,18 @@ export default function ProductCard({ product }: ProductCardProps) {
               <p className="text-xs md:text-sm font-medium uppercase tracking-widest text-white/90 mb-1" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>{product.brand}</p>
               <div className="flex justify-between items-end gap-4">
                 <h3 className="font-serif text-2xl md:text-3xl leading-tight" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>{product.name}</h3>
-                <span className="text-lg md:text-xl font-light whitespace-nowrap" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                  {product.variants && product.variants.length > 0 
-                    ? `${language === 'be' ? 'ад' : 'от'} ${Math.min(...product.variants.map(v => v.price)).toFixed(2)}` 
-                    : product.price.toFixed(2)} {t('currency')}
-                </span>
+                <div className="flex flex-col items-end">
+                  <span className="text-lg md:text-xl font-light whitespace-nowrap" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                    {product.variants && product.variants.length > 0 
+                      ? `${language === 'be' ? 'ад' : 'от'} ${Math.min(...product.variants.map(v => v.price)).toFixed(2)}` 
+                      : product.price.toFixed(2)} {t('currency')}
+                  </span>
+                  {product.variants && product.variants.every(v => v.stock === 0) && (
+                    <span className="text-[10px] uppercase tracking-wider text-red-400 font-bold" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}>
+                      {language === 'be' ? 'Няма ў наяўнасці' : 'Нет в наличии'}
+                    </span>
+                  )}
+                </div>
               </div>
               
               {/* Description (hidden by default, appears on hover) */}
@@ -117,19 +124,26 @@ export default function ProductCard({ product }: ProductCardProps) {
                             <div key={type} className="space-y-1.5">
                               <span className="text-[10px] uppercase tracking-widest text-white/80 font-medium">{type}</span>
                               <div className="flex flex-wrap gap-2">
-                                {variants.map((variant) => (
-                                  <button
-                                    key={variant.id}
-                                    onClick={(e) => handleVariantSelect(e, variant.id)}
-                                    className={`flex items-center justify-center px-3 py-1.5 rounded-lg border transition-colors ${
-                                      selectedVariantId === variant.id
-                                        ? 'bg-brand-accent text-white border-brand-accent'
-                                        : 'bg-black/40 text-white border-white/30 hover:bg-white/20 hover:border-white/60'
-                                    }`}
-                                  >
-                                    <span className="text-xs font-medium">{variant.size}</span>
-                                  </button>
-                                ))}
+                                  {variants.map((variant) => (
+                                    <button
+                                      key={variant.id}
+                                      onClick={(e) => handleVariantSelect(e, variant.id)}
+                                      className={`flex items-center justify-center px-3 py-1.5 rounded-lg border transition-all duration-300 ${
+                                        selectedVariantId === variant.id
+                                          ? 'bg-white text-brand-accent border-white scale-105 shadow-lg'
+                                          : 'bg-black/40 text-white border-white/30 hover:bg-white/20 hover:border-white/60'
+                                      }`}
+                                    >
+                                      <div className="flex flex-col items-center">
+                                        <span className="text-xs font-bold">{variant.size}</span>
+                                        {variant.stock === 0 && (
+                                          <span className="text-[8px] opacity-70 uppercase leading-none mt-0.5">
+                                            {language === 'be' ? 'Няма' : 'Нет'}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </button>
+                                  ))}
                               </div>
                             </div>
                           ))}

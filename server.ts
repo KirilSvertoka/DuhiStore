@@ -112,7 +112,10 @@ db.exec(`
     scentFamilies TEXT DEFAULT '[]',
     concentration TEXT DEFAULT 'EDP',
     stockThreshold INTEGER DEFAULT 5,
-    tags TEXT DEFAULT '[]'
+    tags TEXT DEFAULT '[]',
+    popularity INTEGER DEFAULT 0,
+    longevity INTEGER DEFAULT 70,
+    sillage INTEGER DEFAULT 60
   );
 
   CREATE TABLE IF NOT EXISTS product_variants (
@@ -283,6 +286,9 @@ const migrations = [
   "ALTER TABLE products ADD COLUMN description_be TEXT",
   "ALTER TABLE products ADD COLUMN scentFamilies_be TEXT DEFAULT '[]'",
   "ALTER TABLE products ADD COLUMN tags_be TEXT DEFAULT '[]'",
+  "ALTER TABLE products ADD COLUMN popularity INTEGER DEFAULT 0",
+  "ALTER TABLE products ADD COLUMN longevity INTEGER DEFAULT 70",
+  "ALTER TABLE products ADD COLUMN sillage INTEGER DEFAULT 60",
   "ALTER TABLE cms_pages ADD COLUMN title_be TEXT",
   "ALTER TABLE cms_pages ADD COLUMN content_be TEXT",
   "ALTER TABLE products ADD COLUMN slug TEXT",
@@ -837,6 +843,7 @@ app.get('/api/products', (req, res) => {
           case 'name-desc': return b.name.localeCompare(a.name);
           case 'price-asc': return getPrice(a) - getPrice(b);
           case 'price-desc': return getPrice(b) - getPrice(a);
+          case 'popularity': return (b.popularity || 0) - (a.popularity || 0);
           default: return 0;
         }
       });
@@ -1374,9 +1381,19 @@ app.get('/api/admin/export/:type', requireAuth, (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-  const { customer_name, customer_phone, items, total } = req.body;
-  
-  try {
+    const { customer_name, customer_phone, items, total } = req.body;
+    
+    // Update popularity for products in the order
+    if (items && Array.isArray(items)) {
+      for (const item of items) {
+        const productId = item.id || item.product_id;
+        if (productId) {
+          db.prepare('UPDATE products SET popularity = popularity + ? WHERE id = ?').run(item.quantity || 1, productId);
+        }
+      }
+    }
+
+    try {
     const insertOrder = db.prepare(`
       INSERT INTO orders (customer_name, customer_email, customer_phone, customer_region, total, status)
       VALUES (?, ?, ?, ?, ?, ?)

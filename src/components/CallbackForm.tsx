@@ -55,7 +55,7 @@ export default function CallbackForm() {
           maxLength={100}
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
+          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
           placeholder={t('placeholderName')}
         />
       </div>
@@ -75,7 +75,7 @@ export default function CallbackForm() {
               setFormData({ ...formData, phone: val });
             }
           }}
-          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
+          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all placeholder:text-brand-muted text-brand-light"
           placeholder={t('placeholderPhone')}
         />
       </div>
@@ -89,7 +89,7 @@ export default function CallbackForm() {
           maxLength={1000}
           value={formData.message}
           onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-          className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all resize-none placeholder:text-brand-muted text-brand-light"
+          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-accent focus:border-transparent transition-all resize-none placeholder:text-brand-muted text-brand-light"
           placeholder={t('placeholderMessage')}
         />
       </div>

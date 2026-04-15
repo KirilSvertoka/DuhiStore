@@ -51,7 +51,6 @@ export default function App() {
                     <Route path="catalog" element={<Storefront />} />
                     <Route path="catalog/:slug" element={<ProductDetails />} />
                     <Route path="contacts" element={<Contacts />} />
-                    <Route path="reviews" element={<Reviews />} />
                     <Route path="about" element={<About />} />
                     <Route path="wishlist" element={<Wishlist />} />
                     <Route path="admin" element={<AdminPanel />} />

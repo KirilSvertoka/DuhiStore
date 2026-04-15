@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Droplets, Moon, Sun, Instagram, Send, Mail, ShoppingBag, Heart, Menu, X, ChevronDown } from 'lucide-react';
+import { Droplets, Moon, Sun, Instagram, Send, Mail, ShoppingBag, Heart, Menu, X, ChevronDown, Search } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useState, useEffect, useRef } from 'react';
 import { HomeConfig, GeneralSettings } from '../types';
@@ -71,12 +71,11 @@ export default function Layout() {
     });
   }, []);
 
-  const categories = [
-    { id: 'perfume', label: t('perfume') },
-    { id: 'eau_de_toilette', label: t('eauDeToilette') },
-    { id: 'cologne', label: t('cologne') },
-    { id: 'oil', label: t('oil') },
-    { id: 'decant', label: language === 'be' ? 'Адліванты' : 'Отливанты' },
+  const catalogLinks = [
+    { label: language === 'be' ? 'Мужчынскія' : 'Мужские', to: '/catalog?gender=Male' },
+    { label: language === 'be' ? 'Жаночыя' : 'Женские', to: '/catalog?gender=Female' },
+    { label: language === 'be' ? 'Унісекс' : 'Унисекс', to: '/catalog?gender=Unisex' },
+    { label: language === 'be' ? 'Наборы' : 'Наборы', to: '/catalog?category=set' },
   ];
 
   return (
@@ -102,13 +101,13 @@ export default function Layout() {
                 {language === 'be' && config.announcement.text_be ? config.announcement.text_be : config.announcement.text}
               </div>
             )}
-            <header className="bg-brand-bg/90 backdrop-blur-md border-b border-brand-border transition-colors duration-300">
+            <header className="bg-brand-bg border-b border-brand-border transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-4">
               {/* Mobile Menu Button */}
               <button 
-                className="md:hidden p-2 -ml-2 text-brand-muted hover:text-white transition-colors"
+                className="md:hidden p-2 -ml-2 text-brand-muted hover:text-brand-accent transition-colors"
                 onClick={() => setIsMobileMenuOpen(true)}
                 aria-label="Open menu"
               >
@@ -116,21 +115,26 @@ export default function Layout() {
               </button>
 
               <Link to="/" className="flex items-center gap-2 group">
-                <Droplets className="w-6 h-6 text-brand-light group-hover:text-white transition-colors" />
-                <span className="font-serif text-xl font-medium tracking-tight">Arhetip</span>
+                <Droplets className="w-6 h-6 text-brand-light group-hover:text-brand-accent transition-colors" />
+                <span className="font-serif text-xl font-medium tracking-tight uppercase">АРХЕТИП</span>
               </Link>
             </div>
             
             <div className="flex items-center gap-8">
               <nav className="hidden md:flex items-center gap-8">
-                <div className="relative" ref={catalogRef}>
-                  <button 
-                    onClick={() => setIsCatalogOpen(!isCatalogOpen)}
-                    className="flex items-center gap-1 text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-white transition-colors focus:outline-none"
+                <div 
+                  className="relative py-4" 
+                  ref={catalogRef}
+                  onMouseEnter={() => setIsCatalogOpen(true)}
+                  onMouseLeave={() => setIsCatalogOpen(false)}
+                >
+                  <Link 
+                    to="/catalog"
+                    className="flex items-center gap-1 text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-brand-accent transition-colors focus:outline-none"
                   >
                     {t('catalog')}
                     <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isCatalogOpen ? 'rotate-180' : ''}`} />
-                  </button>
+                  </Link>
                   
                   <AnimatePresence>
                     {isCatalogOpen && (
@@ -139,48 +143,50 @@ export default function Layout() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.2 }}
-                        className="absolute top-full left-0 mt-2 w-48 bg-brand-bg rounded-xl shadow-lg border border-brand-border py-2 z-50"
+                        className="absolute top-full left-0 w-48 bg-brand-bg rounded-xl shadow-lg border border-brand-border py-2 z-50"
                       >
                         <Link 
                           to="/catalog" 
-                          className="block px-4 py-2 text-sm text-brand-muted hover:bg-brand-hover hover:text-white transition-colors"
+                          className="block px-4 py-2 text-sm text-brand-muted hover:bg-brand-hover hover:text-brand-accent transition-colors"
                         >
                           {t('viewAll')}
                         </Link>
-                        {categories.map(category => (
+                        {catalogLinks.map(link => (
                           <Link
-                            key={category.id}
-                            to={`/catalog?category=${category.id}`}
-                            className="block px-4 py-2 text-sm text-brand-muted hover:bg-brand-hover hover:text-white transition-colors"
+                            key={link.to}
+                            to={link.to}
+                            className="block px-4 py-2 text-sm text-brand-muted hover:bg-brand-hover hover:text-brand-accent transition-colors"
                           >
-                            {category.label}
+                            {link.label}
                           </Link>
                         ))}
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-                <Link to="/about" className="text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-white transition-colors">{t('about')}</Link>
-                <Link to="/reviews" className="text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-white transition-colors">{t('reviews')}</Link>
-                <Link to="/contacts" className="text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-white transition-colors">{t('contacts')}</Link>
+                <Link to="/about" className="text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-brand-accent transition-colors">{t('about')}</Link>
+                <Link to="/contacts" className="text-sm font-medium uppercase tracking-wider text-brand-muted hover:text-brand-accent transition-colors">{t('contacts')}</Link>
               </nav>
               
               <div className="flex items-center gap-2 sm:gap-4 md:gap-6">
                 <div className="hidden md:flex items-center gap-4 mr-2 border-r border-brand-border pr-6">
-                  <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white transition-colors">
+                  <Link to="/catalog" className="text-brand-muted hover:text-brand-accent transition-colors" title={t('search')}>
+                    <Search className="w-4 h-4" />
+                  </Link>
+                  <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-brand-accent transition-colors">
                     <Instagram className="w-4 h-4" />
                   </a>
-                  <a href="https://t.me/username" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white transition-colors">
+                  <a href="https://t.me/username" target="_blank" rel="noreferrer" className="text-brand-muted hover:text-brand-accent transition-colors">
                     <Send className="w-4 h-4" />
                   </a>
-                  <a href="mailto:hello@arhetip.com" className="text-brand-muted hover:text-white transition-colors">
+                  <a href="mailto:hello@arhetip.com" className="text-brand-muted hover:text-brand-accent transition-colors">
                     <Mail className="w-4 h-4" />
                   </a>
                 </div>
 
                 <Link
                   to="/wishlist"
-                  className="relative p-2 text-brand-muted hover:text-white hover:bg-brand-hover rounded-lg transition-colors"
+                  className="relative p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-hover rounded-lg transition-colors"
                   title={t('wishlist')}
                 >
                   <Heart className="w-5 h-5" />
@@ -193,7 +199,7 @@ export default function Layout() {
 
                 <button 
                   onClick={() => setIsCartOpen(true)}
-                  className="relative p-2 text-brand-muted hover:text-white hover:bg-brand-hover rounded-lg transition-colors"
+                  className="relative p-2 text-brand-muted hover:text-brand-accent hover:bg-brand-hover rounded-lg transition-colors"
                   title={t('cart')}
                 >
                   <ShoppingBag className="w-5 h-5" />
@@ -206,7 +212,7 @@ export default function Layout() {
 
                 <button
                   onClick={() => setLanguage(language === 'ru' ? 'be' : 'ru')}
-                  className="hidden sm:block text-[10px] font-medium text-brand-muted hover:text-white transition-colors uppercase tracking-widest"
+                  className="hidden sm:block text-[10px] font-medium text-brand-muted hover:text-brand-accent transition-colors uppercase tracking-widest"
                   title={t('toggleLanguage')}
                 >
                   {language}
@@ -240,7 +246,7 @@ export default function Layout() {
                 <span className="font-serif text-xl font-medium tracking-tight text-brand-light">Menu</span>
                 <button 
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 text-brand-muted hover:text-white"
+                  className="p-2 text-brand-muted hover:text-brand-accent"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -264,14 +270,14 @@ export default function Layout() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden pl-4 mt-2 space-y-3 border-l border-brand-border ml-1"
                         >
-                          <Link to="/catalog" className="block text-base text-brand-muted hover:text-white">{t('viewAll')}</Link>
-                          {categories.map(category => (
+                          <Link to="/catalog" className="block text-base text-brand-muted hover:text-brand-accent">{t('viewAll')}</Link>
+                          {catalogLinks.map(link => (
                             <Link
-                              key={category.id}
-                              to={`/catalog?category=${category.id}`}
-                              className="block text-base text-brand-muted hover:text-white"
+                              key={link.to}
+                              to={link.to}
+                              className="block text-base text-brand-muted hover:text-brand-accent"
                             >
-                              {category.label}
+                              {link.label}
                             </Link>
                           ))}
                         </motion.div>
@@ -279,7 +285,6 @@ export default function Layout() {
                     </AnimatePresence>
                   </div>
                   <Link to="/about" className="text-lg font-medium uppercase tracking-wider text-brand-light">{t('about')}</Link>
-                  <Link to="/reviews" className="text-lg font-medium uppercase tracking-wider text-brand-light">{t('reviews')}</Link>
                   <Link to="/contacts" className="text-lg font-medium uppercase tracking-wider text-brand-light">{t('contacts')}</Link>
                 </nav>
 
@@ -296,13 +301,13 @@ export default function Layout() {
                 </div>
 
                 <div className="mt-12 flex gap-6">
-                  <a href={settings?.instagram || "https://instagram.com"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
+                  <a href={settings?.instagram || "https://instagram.com"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-brand-accent">
                     <Instagram className="w-6 h-6" />
                   </a>
-                  <a href={settings?.telegram || "https://t.me/username"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-white">
+                  <a href={settings?.telegram || "https://t.me/username"} target="_blank" rel="noreferrer" className="text-brand-muted hover:text-brand-accent">
                     <Send className="w-6 h-6" />
                   </a>
-                  <a href={`mailto:${settings?.email || 'hello@arhetip.com'}`} className="text-brand-muted hover:text-white">
+                  <a href={`mailto:${settings?.email || 'hello@arhetip.com'}`} className="text-brand-muted hover:text-brand-accent">
                     <Mail className="w-6 h-6" />
                   </a>
                 </div>
@@ -321,7 +326,7 @@ export default function Layout() {
       <footer className="border-t border-brand-border mt-24 transition-colors duration-300">
         <Newsletter />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center text-brand-muted text-sm">
-          <p>&copy; {new Date().getFullYear()} Arhetip. {t('allRightsReserved')}</p>
+          <p>&copy; {new Date().getFullYear()} АРХЕТИП. {t('allRightsReserved')}</p>
         </div>
       </footer>
         </div>

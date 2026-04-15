@@ -107,7 +107,7 @@ export default function CartDrawer() {
                 {isCheckingOut && !isSuccess && (
                   <button 
                     onClick={() => setIsCheckingOut(false)}
-                    className="p-2 -ml-2 text-brand-muted hover:text-white transition-colors"
+                    className="p-2 -ml-2 text-brand-muted hover:text-brand-accent transition-colors"
                   >
                     <ArrowLeft className="w-5 h-5" />
                   </button>
@@ -117,7 +117,7 @@ export default function CartDrawer() {
                   {isSuccess ? t('orderSuccess') : t('cart')}
                 </h2>
               </div>
-              <button onClick={closeDrawer} className="p-2 text-brand-muted hover:text-white transition-colors">
+              <button onClick={closeDrawer} className="p-2 text-brand-muted hover:text-brand-accent transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
@@ -153,7 +153,7 @@ export default function CartDrawer() {
                         maxLength={100}
                         value={customerData.name}
                         onChange={e => setCustomerData({...customerData, name: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:ring-2 focus:ring-white outline-none text-brand-light placeholder:text-brand-muted"
+                        className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted"
                         placeholder={t('placeholderName')}
                       />
                     </div>
@@ -166,14 +166,14 @@ export default function CartDrawer() {
                         title="Введите корректный номер телефона"
                         value={customerData.phone}
                         onChange={e => setCustomerData({...customerData, phone: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/5 border border-brand-border rounded-xl focus:ring-2 focus:ring-white outline-none text-brand-light placeholder:text-brand-muted"
+                        className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted"
                         placeholder={t('placeholderPhone')}
                       />
                     </div>
                   </div>
 
                   <div className="pt-4 border-t border-brand-border space-y-4">
-                    <div className="bg-white/5 border border-brand-border rounded-xl p-4 text-center">
+                    <div className="bg-brand-hover border border-brand-border rounded-xl p-4 text-center">
                       <p className="text-sm text-brand-light mb-1">Оплата онлайн находится в разработке 🛠</p>
                       <p className="text-xs text-brand-muted">Оплата производится при получении заказа.</p>
                     </div>
@@ -219,9 +219,9 @@ export default function CartDrawer() {
                             </div>
                             <div className="flex justify-between items-center mt-2">
                               <div className="flex items-center gap-3 border border-brand-border rounded-lg px-2 py-1">
-                                <button onClick={() => updateQuantity(cartItemId, item.quantity - 1)} className="text-brand-muted hover:text-white"><Minus className="w-4 h-4" /></button>
+                                <button onClick={() => updateQuantity(cartItemId, item.quantity - 1)} className="text-brand-muted hover:text-brand-accent"><Minus className="w-4 h-4" /></button>
                                 <span className="text-sm font-medium text-brand-light w-4 text-center">{item.quantity}</span>
-                                <button onClick={() => updateQuantity(cartItemId, item.quantity + 1)} className="text-brand-muted hover:text-white"><Plus className="w-4 h-4" /></button>
+                                <button onClick={() => updateQuantity(cartItemId, item.quantity + 1)} className="text-brand-muted hover:text-brand-accent"><Plus className="w-4 h-4" /></button>
                               </div>
                               <span className="font-medium text-brand-light">{item.price.toFixed(2)} {t('currency')}</span>
                             </div>

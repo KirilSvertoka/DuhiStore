@@ -60,6 +60,9 @@ export interface Product {
   seoTitle?: string;
   seoDescription?: string;
   variants?: ProductVariant[];
+  popularity?: number;
+  longevity?: number; // 0-100
+  sillage?: number; // 0-100
 }
 
 export interface User {

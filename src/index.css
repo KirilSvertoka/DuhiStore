@@ -6,11 +6,11 @@
   --font-oranienbaum: "Playfair Display", serif;
   --font-arsenica: "Playfair Display", serif;
   --font-adventor: "Montserrat", sans-serif;
-  --color-brand-bg: #0F0A0A;
-  --color-brand-light: #fdfbfb;
-  --color-brand-muted: rgba(255, 255, 255, 0.7);
-  --color-brand-border: rgba(255, 255, 255, 0.15);
-  --color-brand-hover: rgba(255, 255, 255, 0.05);
+  --color-brand-bg: #FFFFF0;
+  --color-brand-light: #0F0A0A;
+  --color-brand-muted: rgba(15, 10, 10, 0.7);
+  --color-brand-border: rgba(15, 10, 10, 0.15);
+  --color-brand-hover: rgba(15, 10, 10, 0.05);
   --color-brand-accent: #660010;
   --color-brand-accent-hover: #850015;
 }

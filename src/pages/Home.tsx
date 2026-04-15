@@ -68,9 +68,9 @@ export default function Home() {
       className="w-full"
     >
       <Helmet>
-        <title>Arhetip | Элитная нишевая парфюмерия в Беларуси</title>
-        <meta name="description" content="Откройте для себя коллекцию эксклюзивных нишевых ароматов в Arhetip. Минимализм, качество и уникальные композиции. Доставка по всей Беларуси." />
-        <meta property="og:title" content="Arhetip | Элитная нишевая парфюмерия" />
+        <title>АРХЕТИП | Элитная нишевая парфюмерия в Беларуси</title>
+        <meta name="description" content="Откройте для себя коллекцию эксклюзивных нишевых ароматов в АРХЕТИП. Минимализм, качество и уникальные композиции. Доставка по всей Беларуси." />
+        <meta property="og:title" content="АРХЕТИП | Элитная нишевая парфюмерия" />
         <meta property="og:description" content="Эксклюзивные ароматы для ценителей. Найдите свой идеальный парфюм в нашей коллекции." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content={window.location.origin} />
@@ -97,9 +97,9 @@ export default function Home() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.8 }}
-            className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4 drop-shadow-lg"
+            className="text-5xl md:text-7xl lg:text-8xl text-white mb-6 tracking-tight max-w-5xl flex flex-col gap-4 drop-shadow-lg uppercase"
           >
-            <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>{language === 'be' ? 'Архетып:' : 'Архетип:'}</span>
+            <span style={{ fontFamily: 'var(--font-oranienbaum)' }}>{language === 'be' ? 'АРХЕТЫП:' : 'АРХЕТИП:'}</span>
             <span style={{ fontFamily: 'var(--font-arsenica)' }}>{language === 'be' ? 'Парфумерная крама' : 'Парфюмерный магазин'}</span>
           </motion.h1>
           <motion.p 

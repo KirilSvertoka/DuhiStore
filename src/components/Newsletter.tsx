@@ -21,7 +21,7 @@ export default function Newsletter() {
   };
 
   return (
-    <div className="bg-white/5 border-t border-brand-border py-16 px-4 sm:px-6 lg:px-8">
+    <div className="bg-brand-hover border-t border-brand-border py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="md:w-1/2">
           <h2 className="text-2xl md:text-3xl font-serif mb-2 text-brand-light">{t('newsletterTitle')}</h2>
@@ -54,7 +54,7 @@ export default function Newsletter() {
                   placeholder={t('emailPlaceholder')}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-4 pr-32 py-4 bg-white/5 border border-brand-border rounded-xl text-brand-light placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-white/50 transition-all"
+                  className="w-full pl-4 pr-32 py-4 bg-brand-hover border border-brand-border rounded-xl text-brand-light placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent transition-all"
                 />
                 <button
                   type="submit"

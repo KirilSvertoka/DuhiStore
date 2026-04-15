@@ -5,12 +5,10 @@ import { useLanguage } from './LanguageProvider';
 import { motion } from 'motion/react';
 
 interface RelatedProductsProps {
-  currentProductId: number;
-  scentFamilies: string[];
-  brand: string;
+  product: Product;
 }
 
-export default function RelatedProducts({ currentProductId, scentFamilies, brand }: RelatedProductsProps) {
+export default function RelatedProducts({ product }: RelatedProductsProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const { t } = useLanguage();
 
@@ -21,19 +19,48 @@ export default function RelatedProducts({ currentProductId, scentFamilies, brand
         return res.json();
       })
       .then((data: Product[]) => {
-        const related = data
-          .filter(p => p.id !== currentProductId)
-          .filter(p => 
-            p.brand === brand || 
-            p.scentFamilies.some(sf => scentFamilies.includes(sf))
-          )
-          .sort(() => 0.5 - Math.random())
-          .slice(0, 3);
+        const currentNotes = [
+          ...(product.topNotes || []).map(n => n.name),
+          ...(product.heartNotes || []).map(n => n.name),
+          ...(product.baseNotes || []).map(n => n.name)
+        ];
+        const currentFamilies = product.scentFamilies || [];
+
+        const scoredProducts = data
+          .filter(p => p.id !== product.id)
+          .map(p => {
+            let score = 0;
+            
+            // Score based on scent families overlap
+            const pFamilies = p.scentFamilies || [];
+            const familyOverlap = pFamilies.filter(f => currentFamilies.includes(f)).length;
+            score += familyOverlap * 3;
+
+            // Score based on notes overlap
+            const pNotes = [
+              ...(p.topNotes || []).map(n => n.name),
+              ...(p.heartNotes || []).map(n => n.name),
+              ...(p.baseNotes || []).map(n => n.name)
+            ];
+            const notesOverlap = pNotes.filter(n => currentNotes.includes(n)).length;
+            score += notesOverlap * 2;
+
+            // Same brand bonus
+            if (p.brand === product.brand) {
+              score += 1;
+            }
+
+            return { product: p, score };
+          })
+          .filter(item => item.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 3)
+          .map(item => item.product);
         
-        setProducts(related);
+        setProducts(scoredProducts);
       })
       .catch(console.error);
-  }, [currentProductId, scentFamilies, brand]);
+  }, [product]);
 
   if (products.length === 0) return null;
 
