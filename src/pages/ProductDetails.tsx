@@ -286,17 +286,6 @@ export default function ProductDetails() {
               </div>
             </div>
           </div>
-
-          <div className="space-y-6 border-t border-brand-border pt-8">
-            <h3 className="text-sm font-medium uppercase tracking-wider text-brand-light">{t('notes')}</h3>
-            <div className="bg-brand-hover p-6 rounded-2xl border border-brand-border">
-              <NoteDiagram 
-                topNotes={product.topNotes} 
-                heartNotes={product.heartNotes} 
-                baseNotes={product.baseNotes} 
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -304,6 +293,15 @@ export default function ProductDetails() {
         <p className="text-brand-muted leading-relaxed text-lg font-light">
           {language === 'be' && product.description_be ? product.description_be : product.description}
         </p>
+      </div>
+
+      <div className="mt-24">
+        <h2 className="text-2xl font-serif text-brand-light mb-12 text-center">{t('notes')}</h2>
+        <NoteDiagram 
+          topNotes={product.topNotes} 
+          heartNotes={product.heartNotes} 
+          baseNotes={product.baseNotes} 
+        />
       </div>
 
       {product && (

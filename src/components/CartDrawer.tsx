@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Minus, Plus, ShoppingBag, CheckCircle2, ArrowLeft, RefreshCw, CreditCard } from 'lucide-react';
+import { X, Minus, Plus, ShoppingBag, CheckCircle2, ArrowLeft, RefreshCw, CreditCard, Truck, MapPin } from 'lucide-react';
 import { useCart } from './CartProvider';
 import { useLanguage } from './LanguageProvider';
 import { getVariantType } from '../types';
 
 export default function CartDrawer() {
-  const { items, isCartOpen, setIsCartOpen, updateQuantity, total, clearCart } = useCart();
+  const { items, isCartOpen, setIsCartOpen, updateQuantity, total, clearCart, justAdded } = useCart();
   const { t, language } = useLanguage();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [customerData, setCustomerData] = useState({ name: '', phone: '' });
+  const [customerData, setCustomerData] = useState({ 
+    name: '', 
+    phone: '',
+    city: '',
+    deliveryMethod: 'europost',
+    address: '',
+    comment: ''
+  });
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -36,6 +43,16 @@ export default function CartDrawer() {
     e.preventDefault();
     setIsSubmitting(true);
 
+    let deliveryMethodText = '';
+    switch(customerData.deliveryMethod) {
+      case 'europost': deliveryMethodText = 'Европочта'; break;
+      case 'belpost': deliveryMethodText = 'Белпочта'; break;
+      case 'courier': deliveryMethodText = 'Курьер по Минску'; break;
+      case 'pickup': deliveryMethodText = 'Самовывоз'; break;
+    }
+
+    const fullAddress = customerData.city ? `${customerData.city}, ${customerData.address}` : customerData.address;
+
     try {
       // Simulate processing delay
       await new Promise(resolve => setTimeout(resolve, 1500));
@@ -46,6 +63,9 @@ export default function CartDrawer() {
         body: JSON.stringify({
           customer_name: customerData.name,
           customer_phone: customerData.phone,
+          delivery_method: deliveryMethodText,
+          delivery_address: fullAddress,
+          comment: customerData.comment,
           items: items.map(item => ({
             id: item.id,
             name: item.name,
@@ -80,7 +100,7 @@ export default function CartDrawer() {
     setTimeout(() => {
       setIsCheckingOut(false);
       setIsSuccess(false);
-      setCustomerData({ name: '', phone: '' });
+      setCustomerData({ name: '', phone: '', city: '', deliveryMethod: 'europost', address: '', comment: '' });
     }, 300);
   };
 
@@ -114,7 +134,7 @@ export default function CartDrawer() {
                 )}
                 <h2 className="text-2xl font-serif text-brand-light flex items-center gap-2">
                   <ShoppingBag className="w-6 h-6" />
-                  {isSuccess ? t('orderSuccess') : t('cart')}
+                  {isSuccess ? t('orderSuccess') : (isCheckingOut ? 'Оформление заказа' : t('cart'))}
                 </h2>
               </div>
               <button onClick={closeDrawer} className="p-2 text-brand-muted hover:text-brand-accent transition-colors">
@@ -122,7 +142,7 @@ export default function CartDrawer() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="flex-1 overflow-y-auto p-6 no-scrollbar">
               {isSuccess ? (
                 <motion.div 
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -142,55 +162,124 @@ export default function CartDrawer() {
                   </button>
                 </motion.div>
               ) : isCheckingOut ? (
-                <form onSubmit={handleCheckout} className="space-y-6">
+                <form id="checkout-form" onSubmit={handleCheckout} className="space-y-8 pb-8">
+                  {/* Контактные данные */}
                   <div className="space-y-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">{t('name')}</label>
-                      <input 
-                        required
-                        type="text" 
-                        minLength={2}
-                        maxLength={100}
-                        value={customerData.name}
-                        onChange={e => setCustomerData({...customerData, name: e.target.value})}
-                        className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted"
-                        placeholder={t('placeholderName')}
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-medium uppercase tracking-wider text-brand-muted ml-1">{t('phoneNumber')}</label>
-                      <input 
-                        required
-                        type="tel" 
-                        pattern="^(\+?[0-9\s\-\(\)]{7,20})$"
-                        title="Введите корректный номер телефона"
-                        value={customerData.phone}
-                        onChange={e => setCustomerData({...customerData, phone: e.target.value})}
-                        className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted"
-                        placeholder={t('placeholderPhone')}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-brand-border space-y-4">
-                    <div className="bg-brand-hover border border-brand-border rounded-xl p-4 text-center">
-                      <p className="text-sm text-brand-light mb-1">Оплата онлайн находится в разработке 🛠</p>
-                      <p className="text-xs text-brand-muted">Оплата производится при получении заказа.</p>
+                    <h3 className="text-sm font-medium uppercase tracking-widest text-brand-light border-b border-brand-border pb-2">1. Контактные данные</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1">{t('name')} *</label>
+                        <input 
+                          required
+                          type="text" 
+                          minLength={2}
+                          maxLength={100}
+                          value={customerData.name}
+                          onChange={e => setCustomerData({...customerData, name: e.target.value})}
+                          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm"
+                          placeholder={t('placeholderName')}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1">{t('phoneNumber')} *</label>
+                        <input 
+                          required
+                          type="tel" 
+                          pattern="^(\+?[0-9\s\-\(\)]{7,20})$"
+                          title="Введите корректный номер телефона"
+                          value={customerData.phone}
+                          onChange={e => setCustomerData({...customerData, phone: e.target.value})}
+                          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm"
+                          placeholder={t('placeholderPhone')}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-brand-border">
-                    <div className="flex justify-between items-center mb-6">
-                      <span className="text-brand-muted">{t('total')}</span>
-                      <span className="text-2xl font-serif text-brand-light">{total.toFixed(2)} {t('currency')}</span>
+                  {/* Доставка */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium uppercase tracking-widest text-brand-light border-b border-brand-border pb-2">2. Доставка</h3>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1">Город / Населенный пункт *</label>
+                        <input 
+                          required
+                          type="text" 
+                          value={customerData.city}
+                          onChange={e => setCustomerData({...customerData, city: e.target.value})}
+                          className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm"
+                          placeholder="Минск"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1 mb-2 block">Способ доставки *</label>
+                        <div className="space-y-2">
+                          {[
+                            { id: 'europost', label: 'Европочта (до отделения)' },
+                            { id: 'belpost', label: 'Белпочта' },
+                            { id: 'courier', label: 'Курьером по Минску' },
+                            { id: 'pickup', label: 'Самовывоз' }
+                          ].map(method => (
+                            <label key={method.id} className={`flex items-center p-3 border rounded-xl cursor-pointer transition-colors ${customerData.deliveryMethod === method.id ? 'border-brand-accent bg-brand-accent/5' : 'border-brand-border bg-brand-hover hover:border-brand-accent/50'}`}>
+                              <input 
+                                type="radio" 
+                                name="deliveryMethod" 
+                                value={method.id}
+                                checked={customerData.deliveryMethod === method.id}
+                                onChange={e => setCustomerData({...customerData, deliveryMethod: e.target.value})}
+                                className="w-4 h-4 text-brand-accent bg-brand-bg border-brand-border focus:ring-brand-accent focus:ring-offset-brand-bg"
+                              />
+                              <span className="ml-3 text-sm text-brand-light">{method.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {customerData.deliveryMethod !== 'pickup' && (
+                        <motion.div 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          className="pt-2"
+                        >
+                          <label className="text-[10px] font-medium uppercase tracking-wider text-brand-muted ml-1">
+                            {customerData.deliveryMethod === 'courier' ? 'Улица, дом, квартира *' : 'Отделение почты / Адрес *'}
+                          </label>
+                          <input 
+                            required
+                            type="text" 
+                            value={customerData.address}
+                            onChange={e => setCustomerData({...customerData, address: e.target.value})}
+                            className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm mt-1"
+                            placeholder={customerData.deliveryMethod === 'courier' ? 'ул. Ленина, д. 1, кв. 1' : 'Отделение №123 или полный адрес'}
+                          />
+                        </motion.div>
+                      )}
                     </div>
-                    <button 
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors flex items-center justify-center gap-2"
-                    >
-                      {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Оформить заказ'}
-                    </button>
+                  </div>
+
+                  {/* Оплата */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium uppercase tracking-widest text-brand-light border-b border-brand-border pb-2">3. Оплата</h3>
+                    <div className="bg-brand-hover border border-brand-border rounded-xl p-4 flex items-start gap-3">
+                      <CreditCard className="w-5 h-5 text-brand-accent shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-brand-light">Оплата при получении</p>
+                        <p className="text-xs text-brand-muted mt-1">Оплата производится наличными или картой при получении заказа.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Комментарий */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium uppercase tracking-widest text-brand-light border-b border-brand-border pb-2">4. Комментарий к заказу</h3>
+                    <textarea 
+                      rows={3}
+                      value={customerData.comment}
+                      onChange={e => setCustomerData({...customerData, comment: e.target.value})}
+                      className="w-full px-4 py-3 bg-brand-hover border border-brand-border rounded-xl focus:ring-2 focus:ring-brand-accent outline-none text-brand-light placeholder:text-brand-muted/50 text-sm resize-none"
+                      placeholder="Дополнительная информация (необязательно)"
+                    />
                   </div>
                 </form>
               ) : (
@@ -234,18 +323,30 @@ export default function CartDrawer() {
               )}
             </div>
 
-            {items.length > 0 && !isCheckingOut && !isSuccess && (
-              <div className="p-6 border-t border-brand-border bg-brand-bg/50">
+            {items.length > 0 && !isSuccess && (
+              <div className="p-6 border-t border-brand-border bg-brand-bg/95 backdrop-blur-sm shadow-[0_-10px_30px_rgba(0,0,0,0.5)] z-10">
                 <div className="flex justify-between items-center mb-4">
                   <span className="text-brand-muted">{t('total')}</span>
                   <span className="text-2xl font-serif text-brand-light">{total.toFixed(2)} {t('currency')}</span>
                 </div>
-                <button 
-                  onClick={() => setIsCheckingOut(true)}
-                  className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors"
-                >
-                  {t('checkout')}
-                </button>
+                {isCheckingOut ? (
+                  <button 
+                    form="checkout-form"
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 bg-brand-accent text-white rounded-xl font-medium uppercase tracking-widest hover:bg-brand-accent-hover transition-colors flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? <RefreshCw className="w-5 h-5 animate-spin" /> : 'Подтвердить заказ'}
+                  </button>
+                ) : (
+                  <motion.button 
+                    onClick={() => setIsCheckingOut(true)}
+                    animate={justAdded ? { scale: [1, 1.05, 1], transition: { repeat: 3, duration: 0.5 } } : {}}
+                    className={`w-full py-4 text-white rounded-xl font-medium uppercase tracking-widest transition-colors ${justAdded ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-brand-accent hover:bg-brand-accent-hover'}`}
+                  >
+                    {t('checkout')}
+                  </motion.button>
+                )}
               </div>
             )}
           </motion.div>

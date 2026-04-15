@@ -300,7 +300,11 @@ const migrations = [
   "ALTER TABLE users ADD COLUMN avg_order_value REAL DEFAULT 0",
   "ALTER TABLE users ADD COLUMN loyalty_status TEXT DEFAULT 'Regular'",
   "ALTER TABLE users ADD COLUMN notes TEXT",
-  "ALTER TABLE reviews ADD COLUMN admin_reply TEXT"
+  "ALTER TABLE reviews ADD COLUMN admin_reply TEXT",
+  "ALTER TABLE orders ADD COLUMN delivery_method TEXT",
+  "ALTER TABLE orders ADD COLUMN delivery_address TEXT",
+  "ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT 'При получении'",
+  "ALTER TABLE orders ADD COLUMN comment TEXT"
 ];
 
 function slugify(text: string) {
@@ -1381,7 +1385,7 @@ app.get('/api/admin/export/:type', requireAuth, (req, res) => {
 });
 
 app.post('/api/orders', async (req, res) => {
-    const { customer_name, customer_phone, items, total } = req.body;
+    const { customer_name, customer_phone, items, total, delivery_method, delivery_address, comment } = req.body;
     
     // Update popularity for products in the order
     if (items && Array.isArray(items)) {
@@ -1395,11 +1399,11 @@ app.post('/api/orders', async (req, res) => {
 
     try {
     const insertOrder = db.prepare(`
-      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_region, total, status)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO orders (customer_name, customer_email, customer_phone, customer_region, total, status, delivery_method, delivery_address, comment)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
-    const result = insertOrder.run(customer_name, '', customer_phone, '', total, 'New');
+    const result = insertOrder.run(customer_name, '', customer_phone, '', total, 'New', delivery_method || '', delivery_address || '', comment || '');
     const orderId = result.lastInsertRowid;
     
     const insertOrderItem = db.prepare(`
@@ -1428,7 +1432,12 @@ app.post('/api/orders', async (req, res) => {
         const variantInfo = item.selectedVariantSize ? ` (${item.selectedVariantSize})` : '';
         return `• ${item.name}${variantInfo} x${item.quantity} (${item.price} BYN)`;
       }).join('\n');
-      const text = `🛍 *Новый заказ #${orderId}*\n\n👤 *Клиент:* ${customer_name}\n📞 *Телефон:* ${customer_phone}\n\n📦 *Товары:*\n${itemsText}\n\n💰 *Итого:* ${total} BYN`;
+      
+      let text = `🛍 *Новый заказ #${orderId}*\n\n👤 *Клиент:* ${customer_name}\n📞 *Телефон:* ${customer_phone}\n`;
+      if (delivery_method) text += `🚚 *Доставка:* ${delivery_method}\n`;
+      if (delivery_address) text += `📍 *Адрес:* ${delivery_address}\n`;
+      if (comment) text += `💬 *Комментарий:* ${comment}\n`;
+      text += `\n📦 *Товары:*\n${itemsText}\n\n💰 *Итого:* ${total} BYN`;
       
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
